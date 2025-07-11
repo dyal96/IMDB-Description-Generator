@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>IMDb Description Generator for Telegram</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f2f2f2;
+      padding: 30px;
+      max-width: 700px;
+      margin: auto;
+    }
+    h2 { text-align: center; }
+    input, textarea, button, select {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+      font-size: 1rem;
+    }
+    textarea {
+      height: 200px;
+      white-space: pre-wrap;
+    }
+    .actions {
+      display: flex;
+      gap: 10px;
+    }
+    button {
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h2>🎬 IMDb Description Generator for Telegram</h2>
+
+  <label>IMDb Link:</label>
+  <input type="text" id="imdb" placeholder="https://www.imdb.com/title/tt23849204/">
+
+  <label>Download Link (Optional):</label>
+  <input type="text" id="dl" placeholder="Paste your download link here...">
+
+  <label>Choose Template:</label>
+  <select id="template">
+    <option value="movie">🎬 Movie Template</option>
+    <option value="series">📺 Web Series Template</option>
+    <option value="short">📱 Short Description</option>
+  </select>
+
+  <button onclick="generate()">Generate Description</button>
+
+  <h3>Generated Output:</h3>
+  <textarea id="output" readonly></textarea>
+
+  <div class="actions">
+    <button onclick="copyText()">📋 Copy</button>
+    <button onclick="downloadText()">💾 Download .txt</button>
+  </div>
+
+  <script>
+    async function generate() {
+      const imdbUrl = document.getElementById('imdb').value.trim();
+      const downloadLink = document.getElementById('dl').value.trim();
+      const template = document.getElementById('template').value;
+      const imdbIdMatch = imdbUrl.match(/tt\d+/);
+      const outputBox = document.getElementById('output');
+
+      if (!imdbIdMatch) {
+        alert("Please enter a valid IMDb link.");
+        return;
+      }
+
+      const imdbId = imdbIdMatch[0];
+      const apiKey = "YOUR_OMDB_API_KEY"; // Replace with your OMDb API key
+      const apiUrl = `https://www.omdbapi.com/?i=${imdbId}&apikey=${apiKey}`;
+
+      try {
+        const res = await fetch(apiUrl);
+        const data = await res.json();
+
+        if (data.Response === "False") {
+          alert("Error fetching movie info. Check IMDb link or API key.");
+          return;
+        }
+
+        const imdbLink = `https://www.imdb.com/title/${imdbId}/`;
+        let text = "";
+
+        if (template === "movie") {
+          text =
+`🎬 /Title : ${data.Title} (${data.Year})
+⭐ IMDb Rating: ${data.imdbRating}/10
+🔗 More Info: ${imdbLink}
+
+📝 Plot:
+${data.Plot}
+
+🎭 Genre: ${data.Genre}
+⏱ Runtime: ${data.Runtime}
+🎙 Language: ${data.Language}
+👥 Cast: ${data.Actors}
+
+📥 Download Link:
+${downloadLink ? downloadLink : "Coming Soon..."}`;
+        } else if (template === "series") {
+          text =
+`📺 /Series : ${data.Title} (${data.Year})
+⭐ IMDb Rating: ${data.imdbRating}/10
+🔗 More Info: ${imdbLink}
+
+📝 Plot:
+${data.Plot}
+
+🎭 Genre: ${data.Genre}
+📅 Total Seasons: ${data.totalSeasons || "N/A"}
+🎙 Language: ${data.Language}
+👥 Cast: ${data.Actors}
+
+📥 Download Link:
+${downloadLink ? downloadLink : "Coming Soon..."}`;
+        } else if (template === "short") {
+          text =
+`🎬 ${data.Title} (${data.Year})
+⭐ ${data.imdbRating}/10 IMDb
+🔗 ${imdbLink}
+📥 ${downloadLink ? downloadLink : "Download link coming soon!"}`;
+        }
+
+        outputBox.value = text;
+
+      } catch (err) {
+        console.error(err);
+        alert("Something went wrong. Try again.");
+      }
+    }
+
+    function copyText() {
+      const output = document.getElementById('output');
+      output.select();
+      document.execCommand("copy");
+      alert("Copied to clipboard!");
+    }
+
+    function downloadText() {
+      const text = document.getElementById('output').value;
+      const blob = new Blob([text], { type: "text/plain" });
+      const link = document.createElement("a");
+      link.download = "imdb_description.txt";
+      link.href = URL.createObjectURL(blob);
+      link.click();
+    }
+  </script>
+</body>
+</html>
