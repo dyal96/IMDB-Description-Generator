@@ -1,0 +1,2474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IMDb Report — Movies</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="moovie.js/css/moovie.css">
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-card: #1a1a2e;
+            --bg-card-hover: #222240;
+            --border: #2a2a45;
+            --text-primary: #e8e8f0;
+            --text-secondary: #9898b0;
+            --text-muted: #6868808;
+            --accent-gold: #f5c518;
+            --accent-blue: #4a9eff;
+            --accent-purple: #a855f7;
+            --accent-green: #22c55e;
+            --accent-red: #ef4444;
+            --accent-orange: #f97316;
+            --gradient-gold: linear-gradient(135deg, #f5c518, #e8a800);
+            --gradient-blue: linear-gradient(135deg, #4a9eff, #2563eb);
+            --gradient-purple: linear-gradient(135deg, #a855f7, #7c3aed);
+            --shadow-lg: 0 20px 60px rgba(0,0,0,0.5);
+            --shadow-glow: 0 0 40px rgba(245,197,24,0.1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        /* Background effect */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background:
+                radial-gradient(ellipse at 20% 0%, rgba(245,197,24,0.05) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 100%, rgba(74,158,255,0.05) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 24px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ─── Header ─── */
+        .header {
+            text-align: center;
+            margin-bottom: 48px;
+        }
+
+        .header-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(245,197,24,0.1);
+            border: 1px solid rgba(245,197,24,0.2);
+            border-radius: 100px;
+            padding: 6px 16px;
+            font-size: 13px;
+            color: var(--accent-gold);
+            font-weight: 500;
+            margin-bottom: 16px;
+        }
+
+        .header h1 {
+            font-size: clamp(32px, 5vw, 56px);
+            font-weight: 900;
+            background: linear-gradient(135deg, #f5c518 0%, #ffffff 50%, #4a9eff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -1px;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            color: var(--text-secondary);
+            font-size: 16px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .header .folder-path {
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            color: var(--text-muted);
+            background: var(--bg-secondary);
+            padding: 6px 14px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            display: inline-block;
+            margin-top: 12px;
+        }
+
+        /* ─── Stats Grid ─── */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 48px;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            text-align: center;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            border-radius: 16px 16px 0 0;
+        }
+
+        .stat-card:nth-child(1)::before { background: var(--gradient-gold); }
+        .stat-card:nth-child(2)::before { background: var(--gradient-blue); }
+        .stat-card:nth-child(3)::before { background: var(--gradient-purple); }
+        .stat-card:nth-child(4)::before { background: linear-gradient(135deg, #22c55e, #10b981); }
+        .stat-card:nth-child(5)::before { background: linear-gradient(135deg, #f97316, #ea580c); }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+            border-color: rgba(245,197,24,0.3);
+        }
+
+        .stat-value {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+
+        /* ─── Filter / Search ─── */
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 32px;
+            align-items: center;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 250px;
+            position: relative;
+        }
+
+        .search-box input {
+            width: 100%;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 12px 16px 12px 44px;
+            color: var(--text-primary);
+            font-size: 14px;
+            font-family: 'Inter', sans-serif;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .search-box input:focus {
+            border-color: var(--accent-gold);
+        }
+
+        .search-box::before {
+            content: '🔍';
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 16px;
+        }
+
+        .filter-btn {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 10px 18px;
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .filter-btn:hover, .filter-btn.active {
+            background: rgba(245,197,24,0.15);
+            border-color: var(--accent-gold);
+            color: var(--accent-gold);
+        }
+
+        .sort-select {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 10px 14px;
+            color: var(--text-primary);
+            font-size: 13px;
+            font-family: 'Inter', sans-serif;
+            outline: none;
+            cursor: pointer;
+        }
+
+        /* ─── Movie Table ─── */
+        .section-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .section-title .count {
+            background: rgba(245,197,24,0.15);
+            color: var(--accent-gold);
+            font-size: 13px;
+            padding: 4px 12px;
+            border-radius: 100px;
+            font-weight: 600;
+        }
+
+        .table-wrapper {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            overflow: hidden;
+            margin-bottom: 48px;
+            box-shadow: var(--shadow-lg);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead th {
+            background: var(--bg-secondary);
+            padding: 14px 16px;
+            text-align: left;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+            font-weight: 700;
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+            user-select: none;
+            white-space: nowrap;
+        }
+
+        thead th:hover {
+            color: var(--accent-gold);
+        }
+
+        tbody tr {
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+            transition: background 0.2s;
+        }
+
+        tbody tr:hover {
+            background: var(--bg-card-hover);
+        }
+
+        tbody td {
+            padding: 14px 16px;
+            font-size: 14px;
+            vertical-align: middle;
+        }
+
+        .title-cell {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .poster-thumb {
+            width: 40px;
+            height: 56px;
+            border-radius: 6px;
+            object-fit: cover;
+            background: var(--bg-secondary);
+            flex-shrink: 0;
+        }
+
+        .title-info h3 {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 2px;
+        }
+
+        .title-info span {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .rating-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: rgba(245,197,24,0.12);
+            color: var(--accent-gold);
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 14px;
+            white-space: nowrap;
+        }
+
+        .rating-badge.high { background: rgba(34,197,94,0.12); color: var(--accent-green); }
+        .rating-badge.mid { background: rgba(245,197,24,0.12); color: var(--accent-gold); }
+        .rating-badge.low { background: rgba(239,68,68,0.12); color: var(--accent-red); }
+
+        .genre-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+
+        .genre-tag {
+            background: rgba(168,85,247,0.12);
+            color: var(--accent-purple);
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        .type-badge {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            padding: 3px 8px;
+            border-radius: 6px;
+            letter-spacing: 0.5px;
+        }
+
+        .type-badge.movie { background: rgba(74,158,255,0.12); color: var(--accent-blue); }
+        .type-badge.series { background: rgba(168,85,247,0.12); color: var(--accent-purple); }
+
+        .file-name {
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            color: var(--text-muted);
+            max-width: 250px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .imdb-link {
+            color: var(--accent-blue);
+            text-decoration: none;
+            font-size: 13px;
+        }
+
+        .imdb-link:hover {
+            color: var(--accent-gold);
+            text-decoration: underline;
+        }
+
+        /* ─── Not Found Section ─── */
+        .not-found-section {
+            background: rgba(239,68,68,0.05);
+            border: 1px solid rgba(239,68,68,0.15);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 48px;
+        }
+
+        .not-found-section h2 {
+            color: var(--accent-red);
+            font-size: 18px;
+            margin-bottom: 12px;
+        }
+
+        .not-found-list {
+            list-style: none;
+        }
+
+        .not-found-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(239,68,68,0.08);
+            font-size: 13px;
+            color: var(--text-secondary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .not-found-list li:last-child {
+            border-bottom: none;
+        }
+
+        /* ─── Footer ─── */
+        .footer {
+            text-align: center;
+            padding: 32px;
+            color: var(--text-muted);
+            font-size: 13px;
+            border-top: 1px solid var(--border);
+            margin-top: 48px;
+        }
+
+        /* ─── Responsive ─── */
+        @media (max-width: 768px) {
+            .controls { flex-direction: column; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .table-wrapper { overflow-x: auto; }
+            table { min-width: 900px; }
+        }
+
+        /* ─── Animations ─── */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .stat-card, .table-wrapper, .not-found-section {
+            animation: fadeInUp 0.6s ease-out both;
+        }
+
+        .stat-card:nth-child(2) { animation-delay: 0.1s; }
+        .stat-card:nth-child(3) { animation-delay: 0.2s; }
+        .stat-card:nth-child(4) { animation-delay: 0.3s; }
+        .stat-card:nth-child(5) { animation-delay: 0.4s; }
+
+        /* ─── Card View & Modal ─── */
+        #cardsGrid {
+            display: none;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 48px;
+        }
+        .card-item {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s ease;
+        }
+        .card-item:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+            border-color: rgba(245,197,24,0.3);
+        }
+        .card-poster {
+            width: 100%;
+            height: 380px;
+            background: var(--bg-secondary);
+            object-fit: cover;
+        }
+        .card-content {
+            padding: 16px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .card-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 6px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .card-meta {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+        }
+        .card-actions {
+            margin-top: auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .play-btn {
+            background: var(--accent-gold);
+            color: #000;
+            border: none;
+            border-radius: 50%;
+            width: 32px; height: 32px;
+            display: inline-flex; justify-content: center; align-items: center;
+            cursor: pointer;
+            text-decoration: none;
+            transition: transform 0.2s;
+            font-size: 12px;
+        }
+        .play-btn:hover {
+            transform: scale(1.1);
+        }
+        
+        #videoModal {
+            display: none;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+        }
+        #videoContainer {
+            width: 90%; max-width: 1000px;
+            background: #000;
+            box-shadow: 0 0 50px rgba(0,0,0,0.8);
+            position: relative;
+        }
+        .close-modal {
+            position: absolute; top: -40px; right: 0;
+            color: #fff; font-size: 30px; cursor: pointer; z-index: 10000;
+        }
+        
+        .view-btn-group { margin-left: auto; display: flex; gap: 8px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-badge">⭐ IMDb Data Report</div>
+            <h1>Movie & Series Report</h1>
+            <p>Auto-generated IMDb analysis of your media library</p>
+            <div class="folder-path">📁 G:/Movies</div>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">73</div>
+                <div class="stat-label">Total Files</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">48</div>
+                <div class="stat-label">IMDb Matched</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">42</div>
+                <div class="stat-label">Movies</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">6</div>
+                <div class="stat-label">Series</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">⭐ 7.0</div>
+                <div class="stat-label">Avg Rating</div>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="controls">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Search by title, genre, director..." onkeyup="filterTable()">
+            </div>
+            <button class="filter-btn active" onclick="setFilter('all', this)">All</button>
+            <button class="filter-btn" onclick="setFilter('movie', this)">🎬 Movies</button>
+            <button class="filter-btn" onclick="setFilter('series', this)">📺 Series</button>
+            <div class="view-btn-group">
+                <button class="filter-btn active" id="btnTableView" onclick="toggleView('table')">📋 Table</button>
+                <button class="filter-btn" id="btnCardView" onclick="toggleView('card')">🎴 Cards</button>
+            </div>
+            <select class="sort-select" id="sortSelect" onchange="sortTable()">
+                <option value="rating-desc">Sort: Rating ↓</option>
+                <option value="rating-asc">Sort: Rating ↑</option>
+                <option value="title-asc">Sort: Title A→Z</option>
+                <option value="title-desc">Sort: Title Z→A</option>
+                <option value="year-desc">Sort: Year ↓</option>
+                <option value="year-asc">Sort: Year ↑</option>
+            </select>
+        </div>
+
+        <!-- Results Table -->
+        <div class="section-title">
+            📋 Full Library <span class="count" id="resultCount">48 titles</span>
+        </div>
+
+        <div class="table-wrapper">
+            <table id="resultsTable">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Title</th>
+                        <th>Type</th>
+                        <th>IMDb Rating</th>
+                        <th>Year</th>
+                        <th>Genre</th>
+                        <th>Director</th>
+                        <th>File</th>
+                        <th>Play</th>
+                        <th>Link</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr data-type="movie" data-rating="8.6" data-title="Se7en" data-year="1995" data-search="se7en crime, drama, mystery david fincher morgan freeman, brad pitt, kevin spacey">
+                        <td class="idx-col" style="color:var(--text-muted);font-size:12px;">1</td>
+                        <td>
+                            <div class="title-cell">
+                                <img class="poster-thumb" src="https://m.media-amazon.com/images/M/MV5BY2IzNzMxZjctZjUxZi00YzAxLTk3ZjMtODFjODdhMDU5NDM1XkEyXkFqcGc@._V1_SX300.jpg" alt="" loading="lazy">
+                                <div class="title-info">
+                                    <h3>Se7en</h3>
+                                    <span>127 min • United States</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="type-badge movie">Movie</span></td>
+                        <td><span class="rating-badge high">⭐ 8.6</span></td>
+                        <td style="white-space:nowrap;">1995</td>
+                        <td><div class="genre-tags"><span class="genre-tag">Crime</span><span class="genre-tag">Drama</span><span class="genre-tag">Mystery</span></div></td>
+                        <td style="font-size:13px;">David Fincher</td>
+                        <td><span class="file-name" title="se7en.1995.remastered.720p.bluray.x264.YIFY.mkv">se7en.1995.remastered.720p.bluray.x264.YIFY.mkv</span></td>
+                        <td><button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/se7en.1995.remastered.720p.bluray.x264.YIFY.mkv')" title="Play in Browser">▶</button></td>
+                        <td><a class="imdb-link" href="https://www.imdb.com/title/tt0114369/" target="_blank">IMDb ↗</a></td>
+                    </tr>
+                    <tr data-type="movie" data-rating="8.5" data-title="Parasite" data-year="2019" data-search="parasite drama, thriller bong joon ho song kang-ho, lee sun-kyun, cho yeo-jeong">
+                        <td class="idx-col" style="color:var(--text-muted);font-size:12px;">2</td>
+                        <td>
+                            <div class="title-cell">
+                                <img class="poster-thumb" src="https://m.media-amazon.com/images/M/MV5BYjk1Y2U4MjQtY2ZiNS00OWQyLWI3MmYtZWUwNmRjYWRiNWNhXkEyXkFqcGc@._V1_SX300.jpg" alt="" loading="lazy">
+                                <div class="title-info">
+                                    <h3>Parasite</h3>
+                                    <span>132 min • South Korea</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="type-badge movie">Movie</span></td>
+                        <td><span class="rating-badge high">⭐ 8.5</span></td>
+                        <td style="white-space:nowrap;">2019</td>
+                        <td><div class="genre-tags"><span class="genre-tag">Drama</span><span class="genre-tag">Thriller</span></div></td>
+                        <td style="font-size:13px;">Bong Joon Ho</td>
+                        <td><span class="file-name" title="Parasite.2019.720p.BluRay.Hindi.Dual-Audio.x264.6CH-KatmovieHD.nl.mkv">Parasite.2019.720p.BluRay.Hindi.Dual-Audio.x264.6CH-KatmovieHD.nl.mkv</span></td>
+                        <td><button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/Parasite.2019.720p.BluRay.Hindi.Dual-Audio.x264.6CH-KatmovieHD.nl.mkv')" title="Play in Browser">▶</button></td>
+                        <td><a class="imdb-link" href="https://www.imdb.com/title/tt6751668/" target="_blank">IMDb ↗</a></td>
+                    </tr>
+                    <tr data-type="movie" data-rating="8.4" data-title="Inglourious Basterds" data-year="2009" data-search="inglourious basterds adventure, drama, war quentin tarantino brad pitt, diane kruger, eli roth">
+                        <td class="idx-col" style="color:var(--text-muted);font-size:12px;">3</td>
+                        <td>
+                            <div class="title-cell">
+                                <img class="poster-thumb" src="https://m.media-amazon.com/images/M/MV5BODZhMWJlNjYtNDExNC00MTIzLTllM2ItOGQ2NGVjNDQ3MzkzXkEyXkFqcGc@._V1_SX300.jpg" alt="" loading="lazy">
+                                <div class="title-info">
+                                    <h3>Inglourious Basterds</h3>
+                                    <span>153 min • United States, Germany</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="type-badge movie">Movie</span></td>
+                        <td><span class="rating-badge high">⭐ 8.4</span></td>
+                        <td style="white-space:nowrap;">2009</td>
+                        <td><div class="genre-tags"><span class="genre-tag">Adventure</span><span class="genre-tag">Drama</span><span class="genre-tag">War</span></div></td>
+                        <td style="font-size:13px;">Quentin Tarantino</td>
+                        <td><span class="file-name" title="Inglourious Basterds 2009 720p Esub BluRay Dual Audio English Hindi GOPISAHI.mkv">Inglourious Basterds 2009 720p Esub BluRay Dual Audio English Hindi GOPISAHI.mkv</span></td>
+                        <td><button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/Inglourious Basterds 2009 720p Esub BluRay Dual Audio English Hindi GOPISAHI.mkv')" title="Play in Browser">▶</button></td>
+                        <td><a class="imdb-link" href="https://www.imdb.com/title/tt0361748/" target="_blank">IMDb ↗</a></td>
+                    </tr>
+                    <tr data-type="movie" data-rating="8.4" data-title="Avengers: Endgame" data-year="2019" data-search="avengers: endgame action, adventure, sci-fi anthony russo, joe russo robert downey jr., chris evans, mark ruffalo">
+                        <td class="idx-col" style="color:var(--text-muted);font-size:12px;">4</td>
+                        <td>
+                            <div class="title-cell">
+                                <img class="poster-thumb" src="https://m.media-amazon.com/images/M/MV5BMTc5MDE2ODcwNV5BMl5BanBnXkFtZTgwMzI2NzQ2NzM@._V1_SX300.jpg" alt="" loading="lazy">
+                                <div class="title-info">
+                                    <h3>Avengers: Endgame</h3>
+                                    <span>181 min • United States</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="type-badge movie">Movie</span></td>
+                        <td><span class="rating-badge high">⭐ 8.4</span></td>
+                        <td style="white-space:nowrap;">2019</td>
+                        <td><div class="genre-tags"><span class="genre-tag">Action</span><span class="genre-tag">Adventure</span><span class="genre-tag">Sci-Fi</span></div></td>
+                        <td style="font-size:13px;">Anthony Russo, Joe Russo</td>
+                        <td><span class="file-name" title="Avengers Endgame 2019 x264 720p Esub BluRay 5.1 Dual Audio English Hindi GOPISAHI.mkv">Avengers Endgame 2019 x264 720p Esub BluRay 5.1 Dual Audio English Hindi GOPISAHI.mkv</span></td>
+                        <td><button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/Avengers Endgame 2019 x264 720p Esub BluRay 5.1 Dual Audio English Hindi GOPISAHI.mkv')" title="Play in Browser">▶</button></td>
+                        <td><a class="imdb-link" href="https://www.imdb.com/title/tt4154796/" target="_blank">IMDb ↗</a></td>
+                    </tr>
+                    <tr data-type="movie" data-rating="8.4" data-title="Avengers: Infinity War" data-year="2018" data-search="avengers: infinity war action, adventure, sci-fi anthony russo, joe russo robert downey jr., chris hemsworth, mark ruffalo">
+                        <td class="idx-col" style="color:var(--text-muted);font-size:12px;">5</td>
+                        <td>
+                            <div class="title-cell">
+                                <img class="poster-thumb" src="https://m.media-amazon.com/images/M/MV5BMjMxNjY2MDU1OV5BMl5BanBnXkFtZTgwNzY1MTUwNTM@._V1_SX300.jpg" alt="" loading="lazy">
+                                <div class="title-info">
+                                    <h3>Avengers: Infinity War</h3>
+                                    <span>149 min • United States, Norway</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="type-badge movie">Movie</span></td>
+                        <td><span class="rating-badge high">⭐ 8.4</span></td>
+                        <td style="white-space:nowrap;">2018</td>
+                        <td><div class="genre-tags"><span class="genre-tag">Action</span><span class="genre-tag">Adventure</span><span class="genre-tag">Sci-Fi</span></div></td>
+                        <td style="font-size:13px;">Anthony Russo, Joe Russo</td>
+                        <td><span class="file-name" title="Avengers.Infinity.War.2018.720p.BluRay.Dual.Audio.Hindi.640kbps.Eng-KartiKing.mkv">Avengers.Infinity.War.2018.720p.BluRay.Dual.Audio.Hindi.640kbps.Eng-KartiKing.mkv</span></td>
+                        <td><button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/Avengers.Infinity.War.2018.720p.BluRay.Dual.Audio.Hindi.640kbps.Eng-KartiKing.mkv')" title="Play in Browser">▶</button></td>
+                        <td><a class="imdb-link" href="https://www.imdb.com/title/tt4154756/" target="_blank">IMDb ↗</a></td>
+                    </tr>
+                    <tr data-type="series" data-rating="8.3" data-title="House of the Dragon" data-year="2022–" data-search="house of the dragon action, adventure, drama n/a matt smith, emma d'arcy, olivia cooke">
+                        <td class="idx-col" style="color:var(--text-muted);font-size:12px;">6</td>
+                        <td>
+                            <div class="title-cell">
+                                <img class="poster-thumb" src="https://m.media-amazon.com/images/M/MV5BZGM4MTczODQtNGIxOC00Y2U2LTk1YmItNzA2N2VhYmE0Y2YwXkEyXkFqcGc@._V1_SX300.jpg" alt="" loading="lazy">
+                                <div class="title-info">
+                                    <h3>House of the Dragon</h3>
+                                    <span>N/A • United States</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="type-badge series">Series</span></td>
+                        <td><span class="rating-badge high">⭐ 8.3</span></td>
+                        <td style="white-space:nowrap;">2022–</td>
+                        <td><div class="genre-tags"><span class="genre-tag">Action</span><span class="genre-tag">Adventure</span><span class="genre-tag">Drama</span></div></td>
+                        <td style="font-size:13px;">N/A</td>
+                        <td><span class="file-name" title="House.of.the.Dragon.S01E02.WEB.x264-TORRENTGALAXY.mkv">House.of.the.Dragon.S01E02.WEB.x264-TORRENTGALAXY.mkv</span></td>
+                        <td><button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/House.of.the.Dragon.S01E02.WEB.x264-TORRENTGALAXY.mkv')" title="Play in Browser">▶</button></td>
+                        <td><a class="imdb-link" href="https://www.imdb.com/title/tt11198330/" target="_blank">IMDb ↗</a></td>
+                    </tr>
+                    <tr data-type="movie" data-rating="8.2" data-title="A Silent Voice: The Movie" data-year="2016" data-search="a silent voice: the movie animation, drama naoko yamada miyu irino, saori hayami, aoi yûki">
+                        <td class="idx-col" style="color:var(--text-muted);font-size:12px;">7</td>
+                        <td>
+                            <div class="title-cell">
+                                <img class="poster-thumb" src="https://m.media-amazon.com/images/M/MV5BOTFiNzRiOWEtYTQwNy00NmRiLWE0ZWYtNTE0YjExZjFmZjkwXkEyXkFqcGc@._V1_SX300.jpg" alt="" loading="lazy">
+                                <div class="title-info">
+                                    <h3>A Silent Voice: The Movie</h3>
+                                    <span>130 min • Japan</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="type-badge movie">Movie</span></td>
+                        <td><span class="rating-badge high">⭐ 8.2</span></td>
+                        <td style="white-space:nowrap;">2016</td>
+                        <td><div class="genre-tags"><span class="genre-tag">Animation</span><span class="genre-tag">Drama</span></div></td>
+                        <td style="font-size:13px;">Naoko Yamada</td>
+                        <td><span class="file-name" title="A Silent Voice 2016 x264 720p Esub BluRay English Hindi Japanese THE GOPI SAHI.mkv">A Silent Voice 2016 x264 720p Esub BluRay English Hindi Japanese THE GOPI SAHI.mkv</span></td>
+                        <td><button class="play-btn" onclick="openModal('file:///G:/Movies/Cartoons/A Silent Voice 2016 x264 720p Esub BluRay English Hindi Japanese THE GOPI SAHI.mkv')" title="Play in Browser">▶</button></td>
+                        <td><a class="imdb-link" href="https://www.imdb.com/title/tt5323662/" target="_blank">IMDb ↗</a></td>
+                    </tr>
+                    <tr data-type="movie" data-rating="8.2" data-title="Batman Begins" data-year="2005" data-search="batman begins action, crime, drama christopher nolan christian bale, michael caine, ken watanabe">
+                        <td class="idx-col" style="color:var(--text-muted);font-size:12px;">8</td>
+                        <td>
+                            <div class="title-cell">
+                                <img class="poster-thumb" src="https://m.media-amazon.com/images/M/MV5BMzA2NDQzZDEtNDU5Ni00YTlkLTg2OWEtYmQwM2Y1YTBjMjFjXkEyXkFqcGc@._V1_SX300.jpg" alt="" loading="lazy">
+                                <div class="title-info">
+                                    <h3>Batman Begins</h3>
+                                    <span>140 min • United States, United Kingdom</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="type-badge movie">Movie</span></td>
+                        <td><span class="rating-badge high">⭐ 8.2</span></td>
+                        <td style="white-space:nowrap;">2005</td>
+                        <td><div class="genre-tags"><span class="genre-tag">Action</span><span class="genre-tag">Crime</span><span class="genre-tag">Drama</span></div></td>
+                        <td style="font-size:13px;">Christopher Nolan</td>
+                        <td><span class="file-name" title="Batman Begins (2006).mkv">Batman Begins (2006).mkv</span></td>
+                        <td><button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/Batman Begins (2006).mkv')" title="Play in Browser">▶</button></td>
+                        <td><a class="imdb-link" href="https://www.imdb.com/title/tt0372784/" target="_blank">IMDb ↗</a></td>
+                    </tr>
+                    <tr data-type="movie" data-rating="8.2" data-title="Batman Begins" data-year="2005" data-search="batman begins action, crime, drama christopher nolan christian bale, michael caine, ken watanabe">
+                        <td class="idx-col" style="color:var(--text-muted);font-size:12px;">9</td>
+                        <td>
+                            <div class="title-cell">
+                                <img class="poster-thumb" src="https://m.media-amazon.com/images/M/MV5BMzA2NDQzZDEtNDU5Ni00YTlkLTg2OWEtYmQwM2Y1YTBjMjFjXkEyXkFqcGc@._V1_SX300.jpg" alt="" loading="lazy">
+                                <div class="title-info">
+                                    <h3>Batman Begins</h3>
+                                    <span>140 min • United States, United Kingdom</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="type-badge movie">Movie</span></td>
+                        <td><span class="rating-badge high">⭐ 8.2</span></td>
+                        <td style="white-space:nowrap;">2005</td>
+                        <td><div class="genre-tags"><span class="genre-tag">Action</span><span class="genre-tag">Crime</span><span class="genre-tag">Drama</span></div></td>
+                        <td style="font-size:13px;">Christopher Nolan</td>
+                        <td><span class="file-name" title="Batman Begins 2005 720p BluRay Hindi English x264 AC3-LOKiHD.mkv">Batman Begins 2005 720p BluRay Hindi English x264 AC3-LOKiHD.mkv</span></td>
+                        <td><button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/Batman Begins 2005 720p BluRay Hindi English x264 AC3-LOKiHD.mkv')" title="Play in Browser">▶</button></td>
+                        <td><a class="imdb-link" href="https://www.imdb.com/title/tt0372784/" target="_blank">IMDb ↗</a></td>
+                    </tr>
+                    <tr data-type="movie" data-rating="8.1" data-title="Catch Me If You Can" data-year="2002" data-search="catch me if you can biography, crime, drama steven spielberg leonardo dicaprio, tom hanks, christopher walken">
+                        <td class="idx-col" style="color:var(--text-muted);font-size:12px;">10</td>
+                        <td>
+                            <div class="title-cell">
+                                <img class="poster-thumb" src="https://m.media-amazon.com/images/M/MV5BMTY5MzYzNjc5NV5BMl5BanBnXkFtZTYwNTUyNTc2._V1_SX300.jpg" alt="" loading="lazy">
+                                <div class="title-info">
+                                    <h3>Catch Me If You Can</h3>
+                                    <span>141 min • United States, Canada</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="type-badge movie">Movie</span></td>
+                        <td><span class="rating-badge high">⭐ 8.1</span></td>
+                        <td style="white-space:nowrap;">2002</td>
+                        <td><div class="genre-tags"><span class="genre-tag">Biography</span><span class="genre-tag">Crime</span><span class="genre-tag">Drama</span></div></td>
+                        <td style="font-size:13px;">Steven Spielberg</td>
+                        <td><span class="file-name" title="Catch.Me.If.You.Can.2002.720p.BluRay.x264.Hindi.Eng.AC3-ETRG.mkv">Catch.Me.If.You.Can.2002.720p.BluRay.x264.Hindi.Eng.AC3-ETRG.mkv</span></td>
+                        <td><button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/Catch.Me.If.You.Can.2002.720p.BluRay.x264.Hindi.Eng.AC3-ETRG.mkv')" title="Play in Browser">▶</button></td>
+                        <td><a class="imdb-link" href="https://www.imdb.com/title/tt0264464/" target="_blank">IMDb ↗</a></td>
+                    </tr>
+                    <tr data-type="series" data-rating="7.9" data-title="Bahubali" data-year="2008–2009" data-search="bahubali drama n/a rahul sinha, sudhanshu sharan, pankaj tripathi">
+                        <td class="idx-col" style="color:var(--text-muted);font-size:12px;">11</td>
+                        <td>
+                            <div class="title-cell">
+                                <img class="poster-thumb" src="https://m.media-amazon.com/images/M/MV5BMGNjMjRjY2QtOTNiNi00ZmE0LTkwNjYtYTVhNDE2Yzk0OTZhXkEyXkFqcGc@._V1_SX300.jpg" alt="" loading="lazy">
+                                <div class="title-info">
+                                    <h3>Bahubali</h3>
+                                    <span>N/A • India</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="type-badge series">Series</span></td>
+                        <td><span class="rating-badge high">⭐ 7.9</span></td>
+                        <td style="white-space:nowrap;">2008–2009</td>
+                        <td><div class="genre-tags"><span class="genre-tag">Drama</span></div></td>
+                        <td style="font-size:13px;">N/A</td>
+                        <td><span class="file-name" title="Bahubali.mkv">Bahubali.mkv</span></td>
+                        <td><button class="play-btn" onclick="openModal('file:///G:/Movies/South Indian Movies/Bahubali.mkv')" title="Play in Browser">▶</button></td>
+                        <td><a class="imdb-link" href="https://www.imdb.com/title/tt4549714/" target="_blank">IMDb ↗</a></td>
+                    </tr>
+                    <tr data-type="movie" data-rating="7.9" data-title="Arrival" data-year="2016" data-search="arrival drama, mystery, sci-fi denis villeneuve amy adams, jeremy renner, forest whitaker">
+                        <td class="idx-col" style="color:var(--text-muted);font-size:12px;">12</td>
+                        <td>
+                            <div class="title-cell">
+                                <img class="poster-thumb" src="https://m.media-amazon.com/images/M/MV5BMTExMzU0ODcxNDheQTJeQWpwZ15BbWU4MDE1OTI4MzAy._V1_SX300.jpg" alt="" loading="lazy">
+                                <div class="title-info">
+                                    <h3>Arrival</h3>
+                                    <span>116 min • Canada, United States</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="type-badge movie">Movie</span></td>
+                        <td><span class="rating-badge high">⭐ 7.9</span></td>
+                        <td style="white-space:nowrap;">2016</td>
+                        <td><div class="genre-tags"><span class="genre-tag">Drama</span><span class="genre-tag">Mystery</span><span class="genre-tag">Sci-Fi</span></div></td>
+                        <td style="font-size:13px;">Denis Villeneuve</td>
+                        <td><span class="file-name" title="Arrival.2016.720p.BluRay.x264-[YTS.AG].mp4">Arrival.2016.720p.BluRay.x264-[YTS.AG].mp4</span></td>
+                        <td><button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/Arrival.2016.720p.BluRay.x264-[YTS.AG].mp4')" title="Play in Browser">▶</button></td>
+                        <td><a class="imdb-link" href="https://www.imdb.com/title/tt2543164/" target="_blank">IMDb ↗</a></td>
+                    </tr>
+                    <tr data-type="movie" data-rating="7.9" data-title="Avatar" data-year="2009" data-search="avatar action, adventure, fantasy james cameron sam worthington, zoe saldaña, sigourney weaver">
+                        <td class="idx-col" style="color:var(--text-muted);font-size:12px;">13</td>
+                        <td>
+                            <div class="title-cell">
+                                <img class="poster-thumb" src="https://m.media-amazon.com/images/M/MV5BMDEzMmQwZjctZWU2My00MWNlLWE0NjItMDJlYTRlNGJiZjcyXkEyXkFqcGc@._V1_SX300.jpg" alt="" loading="lazy">
+                                <div class="title-info">
+                                    <h3>Avatar</h3>
+                                    <span>162 min • United States, United Kingdom</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="type-badge movie">Movie</span></td>
+                        <td><span class="rating-badge high">⭐ 7.9</span></td>
+                        <td style="white-space:nowrap;">2009</td>
+                        <td><div class="genre-tags"><span class="genre-tag">Action</span><span class="genre-tag">Adventure</span><span class="genre-tag">Fantasy</span></div></td>
+                        <td style="font-size:13px;">James Cameron</td>
+                        <td><span class="file-name" title="Avatar.mkv">Avatar.mkv</span></td>
+                        <td><button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/Avatar.mkv')" title="Play in Browser">▶</button></td>
+                        <td><a class="imdb-link" href="https://www.imdb.com/title/tt0499549/" target="_blank">IMDb ↗</a></td>
+                    </tr>
+                    <tr data-type="movie" data-rating="7.7" data-title="Door to Door" data-year="2002" data-search="door to door biography, drama steven schachter william h. macy, kyra sedgwick, kathy baker">
+                        <td class="idx-col" style="color:var(--text-muted);font-size:12px;">14</td>
+                        <td>
+                            <div class="title-cell">
+                                <img class="poster-thumb" src="https://m.media-amazon.com/images/M/MV5BNjQ5YzI4NGEtNTJlYy00MDI0LTg4MjktZWIxZDg0ZGJkODVhXkEyXkFqcGc@._V1_SX300.jpg" alt="" loading="lazy">
+                                <div class="title-info">
+                                    <h3>Door to Door</h3>
+                                    <span>90 min • Canada, United States</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="type-badge movie">Movie</span></td>
+                        <td><span class="rating-badge high">⭐ 7.7</span></td>
+                        <td style="white-space:nowrap;">2002</td>
+                        <td><div class="genre-tags"><span class="genre-tag">Biography</span><span class="genre-tag">Drama</span></div></td>
+                        <td style="font-size:13px;">Steven Schachter</td>
+                        <td><span class="file-name" title="Door.To.Door.2002.720p.WEBRip.x264.AAC-[YTS.MX].mp4">Door.To.Door.2002.720p.WEBRip.x264.AAC-[YTS.MX].mp4</span></td>
+                        <td><button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/Door.To.Door.2002.720p.WEBRip.x264.AAC-[YTS.MX].mp4')" title="Play in Browser">▶</button></td>
+                        <td><a class="imdb-link" href="https://www.imdb.com/title/tt0274468/" target="_blank">IMDb ↗</a></td>
+                    </tr>
+                    <tr data-type="movie" data-rating="7.6" data-title="Wake Up Sid" data-year="2009" data-search="wake up sid comedy, drama, romance ayan mukerji ranbir kapoor, konkona sen sharma, supriya pathak">
+                        <td class="idx-col" style="color:var(--text-muted);font-size:12px;">15</td>
+                        <td>
+                            <div class="title-cell">
+                                <img class="poster-thumb" src="https://m.media-amazon.com/images/M/MV5BNWRjZTZiNTMtZTkwNi00MDIxLTgyYjAtODE5Y2Y2ZGRiYjRlXkEyXkFqcGc@._V1_SX300.jpg" alt="" loading="lazy">
+                                <div class="title-info">
+                                    <h3>Wake Up Sid</h3>
+                                    <span>138 min • India</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="type-badge movie">Movie</span></td>
+                        <td><span class="rating-badge high">⭐ 7.6</span></td>
+                        <td style="white-space:nowrap;">2009</td>
+                        <td><div class="genre-tags"><span class="genre-tag">Comedy</span><span class="genre-tag">Drama</span><span class="genre-tag">Romance</span></div></td>
+                        <td style="font-size:13px;">Ayan Mukerji</td>
+                        <td><span class="file-name" title="Wake.Up.Sid.2009.720p.BluRay.x264.AAC-[YTS.MX].mp4">Wake.Up.Sid.2009.720p.BluRay.x264.AAC-[YTS.MX].mp4</span></td>
+                        <td><button class="play-btn" onclick="openModal('file:///G:/Movies/Bollywood/Wake.Up.Sid.2009.720p.BluRay.x264.AAC-[YTS.MX].mp4')" title="Play in Browser">▶</button></td>
+                        <td><a class="imdb-link" href="https://www.imdb.com/title/tt1324059/" target="_blank">IMDb ↗</a></td>
+                    </tr>
+                    <tr data-type="movie" data-rating="7.6" data-title="American Psycho" data-year="2000" data-search="american psycho crime, drama, horror mary harron christian bale, justin theroux, josh lucas">
+                        <td class="idx-col" style="color:var(--text-muted);font-size:12px;">16</td>
+                        <td>
+                            <div class="title-cell">
+                                <img class="poster-thumb" src="https://m.media-amazon.com/images/M/MV5BNzBjM2I5ZjUtNmIzNy00OGNkLWIwZDMtOTAwYWUwMzA2YjdlXkEyXkFqcGc@._V1_SX300.jpg" alt="" loading="lazy">
+                                <div class="title-info">
+                                    <h3>American Psycho</h3>
+                                    <span>102 min • United States</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="type-badge movie">Movie</span></td>
+                        <td><span class="rating-badge high">⭐ 7.6</span></td>
+                        <td style="white-space:nowrap;">2000</td>
+                        <td><div class="genre-tags"><span class="genre-tag">Crime</span><span class="genre-tag">Drama</span><span class="genre-tag">Horror</span></div></td>
+                        <td style="font-size:13px;">Mary Harron</td>
+                        <td><span class="file-name" title="American.Psycho.2000.1080p.BrRip.x264.YIFY.mp4">American.Psycho.2000.1080p.BrRip.x264.YIFY.mp4</span></td>
+                        <td><button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/American.Psycho.2000.1080p.BrRip.x264.YIFY.mp4')" title="Play in Browser">▶</button></td>
+                        <td><a class="imdb-link" href="https://www.imdb.com/title/tt0144084/" target="_blank">IMDb ↗</a></td>
+                    </tr>
+                    <tr data-type="movie" data-rating="7.6" data-title="Marvel One-Shot: Agent Carter" data-year="2013" data-search="marvel one-shot: agent carter short, action, adventure, sci-fi louis d'esposito hayley atwell, bradley whitford, dominic cooper, tim trobec">
+                        <td class="idx-col" style="color:var(--text-muted);font-size:12px;">17</td>
+                        <td>
+                            <div class="title-cell">
+                                <img class="poster-thumb" src="https://m.media-amazon.com/images/M/MV5BZDIwZTM4M2QtMWFhYy00N2VmLWFlMjItMzI3NjBjYTc0OTMxXkEyXkFqcGdeQXVyNTE1NjY5Mg@@._V1_SX300.jpg" alt="" loading="lazy">
+                                <div class="title-info">
+                                    <h3>Marvel One-Shot: Agent Carter</h3>
+                                    <span>15 min • USA</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="type-badge movie">Movie</span></td>
+                        <td><span class="rating-badge high">⭐ 7.6</span></td>
+                        <td style="white-space:nowrap;">2013</td>
+                        <td><div class="genre-tags"><span class="genre-tag">Short</span><span class="genre-tag">Action</span><span class="genre-tag">Adventure</span><span class="genre-tag">Sci-Fi</span></div></td>
+                        <td style="font-size:13px;">Louis D'Esposito</td>
+                        <td><span class="file-name" title="Marvel One Shot - Agent Carter (2013) (1080p BluRay x265 HEVC 10bit DTS 5.1 Anna) [UTR].mkv">Marvel One Shot - Agent Carter (2013) (1080p BluRay x265 HEVC 10bit DTS 5.1 Anna) [UTR].mkv</span></td>
+                        <td><button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/Marvel One Shot - Agent Carter (2013) (1080p BluRay x265 HEVC 10bit DTS 5.1 Anna) [UTR].mkv')" title="Play in Browser">▶</button></td>
+                        <td><a class="imdb-link" href="https://www.imdb.com/title/tt3067038/" target="_blank">IMDb ↗</a></td>
+                    </tr>
+                    <tr data-type="movie" data-rating="7.5" data-title="A Bittersweet Life" data-year="2005" data-search="a bittersweet life action, crime, drama kim jee-woon lee byung-hun, shin min-a, kim yeong-cheol">
+                        <td class="idx-col" style="color:var(--text-muted);font-size:12px;">18</td>
+                        <td>
+                            <div class="title-cell">
+                                <img class="poster-thumb" src="https://m.media-amazon.com/images/M/MV5BNmQyNzdkZmItM2ZiMi00ZjQ3LWE4YjctZDdlNDEwNjFiMjJkXkEyXkFqcGc@._V1_SX300.jpg" alt="" loading="lazy">
+                                <div class="title-info">
+                                    <h3>A Bittersweet Life</h3>
+                                    <span>119 min • South Korea</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="type-badge movie">Movie</span></td>
+                        <td><span class="rating-badge high">⭐ 7.5</span></td>
+                        <td style="white-space:nowrap;">2005</td>
+                        <td><div class="genre-tags"><span class="genre-tag">Action</span><span class="genre-tag">Crime</span><span class="genre-tag">Drama</span></div></td>
+                        <td style="font-size:13px;">Kim Jee-woon</td>
+                        <td><span class="file-name" title="A Bittersweet Life 2005 1080p x264_reencoded.mp4">A Bittersweet Life 2005 1080p x264_reencoded.mp4</span></td>
+                        <td><button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/A Bittersweet Life 2005 1080p x264_reencoded.mp4')" title="Play in Browser">▶</button></td>
+                        <td><a class="imdb-link" href="https://www.imdb.com/title/tt0456912/" target="_blank">IMDb ↗</a></td>
+                    </tr>
+                    <tr data-type="movie" data-rating="7.4" data-title="Amar Akbar Anthony" data-year="1977" data-search="amar akbar anthony action, comedy, drama manmohan desai vinod khanna, rishi kapoor, amitabh bachchan">
+                        <td class="idx-col" style="color:var(--text-muted);font-size:12px;">19</td>
+                        <td>
+                            <div class="title-cell">
+                                <img class="poster-thumb" src="https://m.media-amazon.com/images/M/MV5BNmJhMDgyNDEtY2RkMC00NjNmLTg3MGItNWYxZTAzNjE0NjgwXkEyXkFqcGc@._V1_SX300.jpg" alt="" loading="lazy">
+                                <div class="title-info">
+                                    <h3>Amar Akbar Anthony</h3>
+                                    <span>184 min • India</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="type-badge movie">Movie</span></td>
+                        <td><span class="rating-badge mid">⭐ 7.4</span></td>
+                        <td style="white-space:nowrap;">1977</td>
+                        <td><div class="genre-tags"><span class="genre-tag">Action</span><span class="genre-tag">Comedy</span><span class="genre-tag">Drama</span></div></td>
+                        <td style="font-size:13px;">Manmohan Desai</td>
+                        <td><span class="file-name" title="Amar Akbar Anthony (1977) Hindi 1080p WEBDL.mp4">Amar Akbar Anthony (1977) Hindi 1080p WEBDL.mp4</span></td>
+                        <td><button class="play-btn" onclick="openModal('file:///G:/Movies/Bollywood/Amar Akbar Anthony (1977) Hindi 1080p WEBDL.mp4')" title="Play in Browser">▶</button></td>
+                        <td><a class="imdb-link" href="https://www.imdb.com/title/tt0075669/" target="_blank">IMDb ↗</a></td>
+                    </tr>
+                    <tr data-type="movie" data-rating="7.3" data-title="Avengers: Age of Ultron" data-year="2015" data-search="avengers: age of ultron action, adventure, sci-fi joss whedon robert downey jr., chris evans, mark ruffalo">
+                        <td class="idx-col" style="color:var(--text-muted);font-size:12px;">20</td>
+                        <td>
+                            <div class="title-cell">
+                                <img class="poster-thumb" src="https://m.media-amazon.com/images/M/MV5BODBhYTg1NGQtNGVmNS00ZTdiLThjYTYtZDFkNzRiNTZmNDZjXkEyXkFqcGc@._V1_SX300.jpg" alt="" loading="lazy">
+                                <div class="title-info">
+                                    <h3>Avengers: Age of Ultron</h3>
+                                    <span>141 min • United States, South Korea, Cambodia</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="type-badge movie">Movie</span></td>
+                        <td><span class="rating-badge mid">⭐ 7.3</span></td>
+                        <td style="white-space:nowrap;">2015</td>
+                        <td><div class="genre-tags"><span class="genre-tag">Action</span><span class="genre-tag">Adventure</span><span class="genre-tag">Sci-Fi</span></div></td>
+                        <td style="font-size:13px;">Joss Whedon</td>
+                        <td><span class="file-name" title="Avengers Age of Ultron (2015) [Worldfree4u.trade] Hindi 720p BluRay x264 AAC.mkv">Avengers Age of Ultron (2015) [Worldfree4u.trade] Hindi 720p BluRay x264 AAC.mkv</span></td>
+                        <td><button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/Avengers Age of Ultron (2015) [Worldfree4u.trade] Hindi 720p BluRay x264 AAC.mkv')" title="Play in Browser">▶</button></td>
+                        <td><a class="imdb-link" href="https://www.imdb.com/title/tt2395427/" target="_blank">IMDb ↗</a></td>
+                    </tr>
+                    <tr data-type="movie" data-rating="7.3" data-title="Avengers: Age of Ultron" data-year="2015" data-search="avengers: age of ultron action, adventure, sci-fi joss whedon robert downey jr., chris evans, mark ruffalo">
+                        <td class="idx-col" style="color:var(--text-muted);font-size:12px;">21</td>
+                        <td>
+                            <div class="title-cell">
+                                <img class="poster-thumb" src="https://m.media-amazon.com/images/M/MV5BODBhYTg1NGQtNGVmNS00ZTdiLThjYTYtZDFkNzRiNTZmNDZjXkEyXkFqcGc@._V1_SX300.jpg" alt="" loading="lazy">
+                                <div class="title-info">
+                                    <h3>Avengers: Age of Ultron</h3>
+                                    <span>141 min • United States, South Korea, Cambodia</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="type-badge movie">Movie</span></td>
+                        <td><span class="rating-badge mid">⭐ 7.3</span></td>
+                        <td style="white-space:nowrap;">2015</td>
+                        <td><div class="genre-tags"><span class="genre-tag">Action</span><span class="genre-tag">Adventure</span><span class="genre-tag">Sci-Fi</span></div></td>
+                        <td style="font-size:13px;">Joss Whedon</td>
+                        <td><span class="file-name" title="Avengers.Age.of.Ultron.2015.720p.BluRay.Dual.Audio.Hindi.640kbps.Eng-KartiKing.mkv">Avengers.Age.of.Ultron.2015.720p.BluRay.Dual.Audio.Hindi.640kbps.Eng-KartiKing.mkv</span></td>
+                        <td><button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/Avengers.Age.of.Ultron.2015.720p.BluRay.Dual.Audio.Hindi.640kbps.Eng-KartiKing.mkv')" title="Play in Browser">▶</button></td>
+                        <td><a class="imdb-link" href="https://www.imdb.com/title/tt2395427/" target="_blank">IMDb ↗</a></td>
+                    </tr>
+                    <tr data-type="series" data-rating="7.3" data-title="Halo" data-year="2022–2024" data-search="halo action, adventure, sci-fi n/a pablo schreiber, shabana azmi, natascha mcelhone">
+                        <td class="idx-col" style="color:var(--text-muted);font-size:12px;">22</td>
+                        <td>
+                            <div class="title-cell">
+                                <img class="poster-thumb" src="https://m.media-amazon.com/images/M/MV5BYzNkODg3OTYtM2EyZC00NmEyLTgzZDktYjY5NGNjZmQ5ZDRiXkEyXkFqcGc@._V1_SX300.jpg" alt="" loading="lazy">
+                                <div class="title-info">
+                                    <h3>Halo</h3>
+                                    <span>N/A • United States</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="type-badge series">Series</span></td>
+                        <td><span class="rating-badge mid">⭐ 7.3</span></td>
+                        <td style="white-space:nowrap;">2022–2024</td>
+                        <td><div class="genre-tags"><span class="genre-tag">Action</span><span class="genre-tag">Adventure</span><span class="genre-tag">Sci-Fi</span></div></td>
+                        <td style="font-size:13px;">N/A</td>
+                        <td><span class="file-name" title="Halo.S01E06.WEB.x264-TORRENTGALAXY.mkv">Halo.S01E06.WEB.x264-TORRENTGALAXY.mkv</span></td>
+                        <td><button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/Halo.S01E06.WEB.x264-TORRENTGALAXY.mkv')" title="Play in Browser">▶</button></td>
+                        <td><a class="imdb-link" href="https://www.imdb.com/title/tt2934286/" target="_blank">IMDb ↗</a></td>
+                    </tr>
+                    <tr data-type="series" data-rating="7.3" data-title="Moon Knight" data-year="2022" data-search="moon knight action, adventure, fantasy n/a oscar isaac, ethan hawke, may calamawy">
+                        <td class="idx-col" style="color:var(--text-muted);font-size:12px;">23</td>
+                        <td>
+                            <div class="title-cell">
+                                <img class="poster-thumb" src="https://m.media-amazon.com/images/M/MV5BNDAzNmYwZjgtNDc3YS00ZDMyLTk0MjktMTg4MGNmNGU3MjlhXkEyXkFqcGc@._V1_SX300.jpg" alt="" loading="lazy">
+                                <div class="title-info">
+                                    <h3>Moon Knight</h3>
+                                    <span>31S min • United States</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="type-badge series">Series</span></td>
+                        <td><span class="rating-badge mid">⭐ 7.3</span></td>
+                        <td style="white-space:nowrap;">2022</td>
+                        <td><div class="genre-tags"><span class="genre-tag">Action</span><span class="genre-tag">Adventure</span><span class="genre-tag">Fantasy</span></div></td>
+                        <td style="font-size:13px;">N/A</td>
+                        <td><span class="file-name" title="Moon.Knight.S01E05.WEB.x264-TORRENTGALAXY.mkv">Moon.Knight.S01E05.WEB.x264-TORRENTGALAXY.mkv</span></td>
+                        <td><button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/Moon.Knight.S01E05.WEB.x264-TORRENTGALAXY.mkv')" title="Play in Browser">▶</button></td>
+                        <td><a class="imdb-link" href="https://www.imdb.com/title/tt10234724/" target="_blank">IMDb ↗</a></td>
+                    </tr>
+                    <tr data-type="movie" data-rating="7.2" data-title="Send Help" data-year="2026" data-search="send help adventure, horror, thriller sam raimi rachel mcadams, dylan o'brien, edyll ismail">
+                        <td class="idx-col" style="color:var(--text-muted);font-size:12px;">24</td>
+                        <td>
+                            <div class="title-cell">
+                                <img class="poster-thumb" src="https://m.media-amazon.com/images/M/MV5BOTgxOWY5NTMtYjdiNi00NTIyLTkwMTQtMWNjM2IzYTU0ODgyXkEyXkFqcGc@._V1_SX300.jpg" alt="" loading="lazy">
+                                <div class="title-info">
+                                    <h3>Send Help</h3>
+                                    <span>113 min • United States</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="type-badge movie">Movie</span></td>
+                        <td><span class="rating-badge mid">⭐ 7.2</span></td>
+                        <td style="white-space:nowrap;">2026</td>
+                        <td><div class="genre-tags"><span class="genre-tag">Adventure</span><span class="genre-tag">Horror</span><span class="genre-tag">Thriller</span></div></td>
+                        <td style="font-size:13px;">Sam Raimi</td>
+                        <td><span class="file-name" title="Send Help 2026 1080p WEB-DL HEVC x265 5.1 BONE.mkv">Send Help 2026 1080p WEB-DL HEVC x265 5.1 BONE.mkv</span></td>
+                        <td><button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/Send Help 2026 1080p WEB-DL HEVC x265 5.1 BONE.mkv')" title="Play in Browser">▶</button></td>
+                        <td><a class="imdb-link" href="https://www.imdb.com/title/tt8036976/" target="_blank">IMDb ↗</a></td>
+                    </tr>
+                    <tr data-type="movie" data-rating="7.2" data-title="Ant-Man" data-year="2015" data-search="ant-man action, comedy, sci-fi peyton reed paul rudd, michael douglas, corey stoll">
+                        <td class="idx-col" style="color:var(--text-muted);font-size:12px;">25</td>
+                        <td>
+                            <div class="title-cell">
+                                <img class="poster-thumb" src="https://m.media-amazon.com/images/M/MV5BMjM2NTQ5Mzc2M15BMl5BanBnXkFtZTgwNTcxMDI2NTE@._V1_SX300.jpg" alt="" loading="lazy">
+                                <div class="title-info">
+                                    <h3>Ant-Man</h3>
+                                    <span>117 min • United States</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="type-badge movie">Movie</span></td>
+                        <td><span class="rating-badge mid">⭐ 7.2</span></td>
+                        <td style="white-space:nowrap;">2015</td>
+                        <td><div class="genre-tags"><span class="genre-tag">Action</span><span class="genre-tag">Comedy</span><span class="genre-tag">Sci-Fi</span></div></td>
+                        <td style="font-size:13px;">Peyton Reed</td>
+                        <td><span class="file-name" title="Ant-Man.2015.720p.BluRay.Dual.Audio.Hindi.640kbps.Eng-KartiKing.mkv">Ant-Man.2015.720p.BluRay.Dual.Audio.Hindi.640kbps.Eng-KartiKing.mkv</span></td>
+                        <td><button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/Ant-Man.2015.720p.BluRay.Dual.Audio.Hindi.640kbps.Eng-KartiKing.mkv')" title="Play in Browser">▶</button></td>
+                        <td><a class="imdb-link" href="https://www.imdb.com/title/tt0478970/" target="_blank">IMDb ↗</a></td>
+                    </tr>
+                    <tr data-type="movie" data-rating="7.1" data-title="American Made" data-year="2017" data-search="american made action, comedy, crime doug liman tom cruise, domhnall gleeson, sarah wright">
+                        <td class="idx-col" style="color:var(--text-muted);font-size:12px;">26</td>
+                        <td>
+                            <div class="title-cell">
+                                <img class="poster-thumb" src="https://m.media-amazon.com/images/M/MV5BMTUxNzUwMjk1Nl5BMl5BanBnXkFtZTgwNDkwODI1MjI@._V1_SX300.jpg" alt="" loading="lazy">
+                                <div class="title-info">
+                                    <h3>American Made</h3>
+                                    <span>115 min • United States</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="type-badge movie">Movie</span></td>
+                        <td><span class="rating-badge mid">⭐ 7.1</span></td>
+                        <td style="white-space:nowrap;">2017</td>
+                        <td><div class="genre-tags"><span class="genre-tag">Action</span><span class="genre-tag">Comedy</span><span class="genre-tag">Crime</span></div></td>
+                        <td style="font-size:13px;">Doug Liman</td>
+                        <td><span class="file-name" title="American Made 2017 Hindi Dual Audio www.downloadhub.mobi 720p BluRay ESubs.mkv">American Made 2017 Hindi Dual Audio www.downloadhub.mobi 720p BluRay ESubs.mkv</span></td>
+                        <td><button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/American Made 2017 Hindi Dual Audio www.downloadhub.mobi 720p BluRay ESubs.mkv')" title="Play in Browser">▶</button></td>
+                        <td><a class="imdb-link" href="https://www.imdb.com/title/tt3532216/" target="_blank">IMDb ↗</a></td>
+                    </tr>
+                    <tr data-type="movie" data-rating="7.0" data-title="Aaja Mexico Challiye" data-year="2022" data-search="aaja mexico challiye drama, thriller rakesh dhawan ammy virk, nasir chinyoti, yasaman mohsani">
+                        <td class="idx-col" style="color:var(--text-muted);font-size:12px;">27</td>
+                        <td>
+                            <div class="title-cell">
+                                <img class="poster-thumb" src="https://m.media-amazon.com/images/M/MV5BYTllOTk4MjctMGY4OS00YTE5LTg0MzItZWRjNzdkNTQwYWIzXkEyXkFqcGdeQXVyMTM1NjAwNTI2._V1_SX300.jpg" alt="" loading="lazy">
+                                <div class="title-info">
+                                    <h3>Aaja Mexico Challiye</h3>
+                                    <span>125 min • India</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="type-badge movie">Movie</span></td>
+                        <td><span class="rating-badge mid">⭐ 7.0</span></td>
+                        <td style="white-space:nowrap;">2022</td>
+                        <td><div class="genre-tags"><span class="genre-tag">Drama</span><span class="genre-tag">Thriller</span></div></td>
+                        <td style="font-size:13px;">Rakesh Dhawan</td>
+                        <td><span class="file-name" title="Aaja.Mexico.Challiye.2022.720p.Web.DL.PUN.2.0.ESub.x264.mkv">Aaja.Mexico.Challiye.2022.720p.Web.DL.PUN.2.0.ESub.x264.mkv</span></td>
+                        <td><button class="play-btn" onclick="openModal('file:///G:/Movies/Punjabi/Aaja.Mexico.Challiye.2022.720p.Web.DL.PUN.2.0.ESub.x264.mkv')" title="Play in Browser">▶</button></td>
+                        <td><a class="imdb-link" href="https://www.imdb.com/title/tt15554410/" target="_blank">IMDb ↗</a></td>
+                    </tr>
+                    <tr data-type="movie" data-rating="7.0" data-title="The Bad Guys 2" data-year="2025" data-search="the bad guys 2 animation, action, adventure jp sans, pierre perifel sam rockwell, marc maron, awkwafina">
+                        <td class="idx-col" style="color:var(--text-muted);font-size:12px;">28</td>
+                        <td>
+                            <div class="title-cell">
+                                <img class="poster-thumb" src="https://m.media-amazon.com/images/M/MV5BY2YwODhmODctMjE2OS00Y2EyLWEyZTEtOGU3ODk5MGIzYmU1XkEyXkFqcGc@._V1_SX300.jpg" alt="" loading="lazy">
+                                <div class="title-info">
+                                    <h3>The Bad Guys 2</h3>
+                                    <span>104 min • United States</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="type-badge movie">Movie</span></td>
+                        <td><span class="rating-badge mid">⭐ 7.0</span></td>
+                        <td style="white-space:nowrap;">2025</td>
+                        <td><div class="genre-tags"><span class="genre-tag">Animation</span><span class="genre-tag">Action</span><span class="genre-tag">Adventure</span></div></td>
+                        <td style="font-size:13px;">JP Sans, Pierre Perifel</td>
+                        <td><span class="file-name" title="The.Bad.Guys.2.2025.1080p.MA.WEBRip.DDP5.1.x265-NeoNoir.mkv">The.Bad.Guys.2.2025.1080p.MA.WEBRip.DDP5.1.x265-NeoNoir.mkv</span></td>
+                        <td><button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/The.Bad.Guys.2.2025.1080p.MA.WEBRip.DDP5.1.x265-NeoNoir.mkv')" title="Play in Browser">▶</button></td>
+                        <td><a class="imdb-link" href="https://www.imdb.com/title/tt30017619/" target="_blank">IMDb ↗</a></td>
+                    </tr>
+                    <tr data-type="movie" data-rating="7.0" data-title="Ant-Man and the Wasp" data-year="2018" data-search="ant-man and the wasp action, adventure, comedy peyton reed paul rudd, evangeline lilly, michael peña">
+                        <td class="idx-col" style="color:var(--text-muted);font-size:12px;">29</td>
+                        <td>
+                            <div class="title-cell">
+                                <img class="poster-thumb" src="https://m.media-amazon.com/images/M/MV5BODVkY2ZmZTAtYzFhMi00YzZlLWE2YWMtMDBiYjY2OTU4ZWM0XkEyXkFqcGc@._V1_SX300.jpg" alt="" loading="lazy">
+                                <div class="title-info">
+                                    <h3>Ant-Man and the Wasp</h3>
+                                    <span>118 min • United States, Canada</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="type-badge movie">Movie</span></td>
+                        <td><span class="rating-badge mid">⭐ 7.0</span></td>
+                        <td style="white-space:nowrap;">2018</td>
+                        <td><div class="genre-tags"><span class="genre-tag">Action</span><span class="genre-tag">Adventure</span><span class="genre-tag">Comedy</span></div></td>
+                        <td style="font-size:13px;">Peyton Reed</td>
+                        <td><span class="file-name" title="Ant-Man.and.the.Wasp.2018.720p.BluRay.Dual.Audio.Hindi.640kbps.Eng-KartiKing.mkv">Ant-Man.and.the.Wasp.2018.720p.BluRay.Dual.Audio.Hindi.640kbps.Eng-KartiKing.mkv</span></td>
+                        <td><button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/Ant-Man.and.the.Wasp.2018.720p.BluRay.Dual.Audio.Hindi.640kbps.Eng-KartiKing.mkv')" title="Play in Browser">▶</button></td>
+                        <td><a class="imdb-link" href="https://www.imdb.com/title/tt5095030/" target="_blank">IMDb ↗</a></td>
+                    </tr>
+                    <tr data-type="movie" data-rating="7.0" data-title="Arthur the King" data-year="2024" data-search="arthur the king adventure, drama, sport simon cellan jones mark wahlberg, simu liu, juliet rylance">
+                        <td class="idx-col" style="color:var(--text-muted);font-size:12px;">30</td>
+                        <td>
+                            <div class="title-cell">
+                                <img class="poster-thumb" src="https://m.media-amazon.com/images/M/MV5BNDIyN2JjOTQtYTY3MS00OTQwLWJmNjAtYzVmNTU1MWNjNzYyXkEyXkFqcGc@._V1_SX300.jpg" alt="" loading="lazy">
+                                <div class="title-info">
+                                    <h3>Arthur the King</h3>
+                                    <span>107 min • United States, Canada</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="type-badge movie">Movie</span></td>
+                        <td><span class="rating-badge mid">⭐ 7.0</span></td>
+                        <td style="white-space:nowrap;">2024</td>
+                        <td><div class="genre-tags"><span class="genre-tag">Adventure</span><span class="genre-tag">Drama</span><span class="genre-tag">Sport</span></div></td>
+                        <td style="font-size:13px;">Simon Cellan Jones</td>
+                        <td><span class="file-name" title="Arthur.the.King.2024.1080p.AMZN.WEBRip.1400MB.DD5.1.x264-GalaxyRG.mkv">Arthur.the.King.2024.1080p.AMZN.WEBRip.1400MB.DD5.1.x264-GalaxyRG.mkv</span></td>
+                        <td><button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/Arthur.the.King.2024.1080p.AMZN.WEBRip.1400MB.DD5.1.x264-GalaxyRG.mkv')" title="Play in Browser">▶</button></td>
+                        <td><a class="imdb-link" href="https://www.imdb.com/title/tt10720352/" target="_blank">IMDb ↗</a></td>
+                    </tr>
+                    <tr data-type="movie" data-rating="6.8" data-title="The Fantastic Four: First Steps" data-year="2025" data-search="the fantastic four: first steps action, adventure, sci-fi matt shakman pedro pascal, vanessa kirby, ebon moss-bachrach">
+                        <td class="idx-col" style="color:var(--text-muted);font-size:12px;">31</td>
+                        <td>
+                            <div class="title-cell">
+                                <img class="poster-thumb" src="https://m.media-amazon.com/images/M/MV5BOGM5MzA3MDAtYmEwMi00ZDNiLTg4MDgtMTZjOTc0ZGMyNTIwXkEyXkFqcGc@._V1_SX300.jpg" alt="" loading="lazy">
+                                <div class="title-info">
+                                    <h3>The Fantastic Four: First Steps</h3>
+                                    <span>115 min • United Kingdom, United States, Canada, New Zealand</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="type-badge movie">Movie</span></td>
+                        <td><span class="rating-badge mid">⭐ 6.8</span></td>
+                        <td style="white-space:nowrap;">2025</td>
+                        <td><div class="genre-tags"><span class="genre-tag">Action</span><span class="genre-tag">Adventure</span><span class="genre-tag">Sci-Fi</span></div></td>
+                        <td style="font-size:13px;">Matt Shakman</td>
+                        <td><span class="file-name" title="The.Fantastic.Four.First.Steps.2025.1080p.WEBRip.10Bit.DDP5.1.x265-NeoNoir.mkv">The.Fantastic.Four.First.Steps.2025.1080p.WEBRip.10Bit.DDP5.1.x265-NeoNoir.mkv</span></td>
+                        <td><button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/The.Fantastic.Four.First.Steps.2025.1080p.WEBRip.10Bit.DDP5.1.x265-NeoNoir.mkv')" title="Play in Browser">▶</button></td>
+                        <td><a class="imdb-link" href="https://www.imdb.com/title/tt10676052/" target="_blank">IMDb ↗</a></td>
+                    </tr>
+                    <tr data-type="movie" data-rating="6.8" data-title="Aquaman" data-year="2018" data-search="aquaman action, adventure, fantasy james wan jason momoa, amber heard, willem dafoe">
+                        <td class="idx-col" style="color:var(--text-muted);font-size:12px;">32</td>
+                        <td>
+                            <div class="title-cell">
+                                <img class="poster-thumb" src="https://m.media-amazon.com/images/M/MV5BOTk5ODg0OTU5M15BMl5BanBnXkFtZTgwMDQ3MDY3NjM@._V1_SX300.jpg" alt="" loading="lazy">
+                                <div class="title-info">
+                                    <h3>Aquaman</h3>
+                                    <span>143 min • United States</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="type-badge movie">Movie</span></td>
+                        <td><span class="rating-badge mid">⭐ 6.8</span></td>
+                        <td style="white-space:nowrap;">2018</td>
+                        <td><div class="genre-tags"><span class="genre-tag">Action</span><span class="genre-tag">Adventure</span><span class="genre-tag">Fantasy</span></div></td>
+                        <td style="font-size:13px;">James Wan</td>
+                        <td><span class="file-name" title="Aquaman 2018 IMAX x264 720p Esub BluRay Dual Audio English Hindi GOPI SAHI.mkv">Aquaman 2018 IMAX x264 720p Esub BluRay Dual Audio English Hindi GOPI SAHI.mkv</span></td>
+                        <td><button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/Aquaman 2018 IMAX x264 720p Esub BluRay Dual Audio English Hindi GOPI SAHI.mkv')" title="Play in Browser">▶</button></td>
+                        <td><a class="imdb-link" href="https://www.imdb.com/title/tt1477834/" target="_blank">IMDb ↗</a></td>
+                    </tr>
+                    <tr data-type="movie" data-rating="6.7" data-title="Hardcore Henry" data-year="2015" data-search="hardcore henry action, adventure, sci-fi ilya naishuller sharlto copley, tim roth, haley bennett">
+                        <td class="idx-col" style="color:var(--text-muted);font-size:12px;">33</td>
+                        <td>
+                            <div class="title-cell">
+                                <img class="poster-thumb" src="https://m.media-amazon.com/images/M/MV5BNjIzNTcwMDc3Nl5BMl5BanBnXkFtZTgwNzU5NTY5NzE@._V1_SX300.jpg" alt="" loading="lazy">
+                                <div class="title-info">
+                                    <h3>Hardcore Henry</h3>
+                                    <span>96 min • Russia, United States, China</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="type-badge movie">Movie</span></td>
+                        <td><span class="rating-badge mid">⭐ 6.7</span></td>
+                        <td style="white-space:nowrap;">2015</td>
+                        <td><div class="genre-tags"><span class="genre-tag">Action</span><span class="genre-tag">Adventure</span><span class="genre-tag">Sci-Fi</span></div></td>
+                        <td style="font-size:13px;">Ilya Naishuller</td>
+                        <td><span class="file-name" title="Hardcore.Henry.2015.720p.BluRay.x264-[YTS.AG].mp4">Hardcore.Henry.2015.720p.BluRay.x264-[YTS.AG].mp4</span></td>
+                        <td><button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/Hardcore.Henry.2015.720p.BluRay.x264-[YTS.AG].mp4')" title="Play in Browser">▶</button></td>
+                        <td><a class="imdb-link" href="https://www.imdb.com/title/tt3072482/" target="_blank">IMDb ↗</a></td>
+                    </tr>
+                    <tr data-type="movie" data-rating="6.4" data-title="The Running Man" data-year="2025" data-search="the running man action, adventure, sci-fi edgar wright glen powell, alyssa benn, sienna benn">
+                        <td class="idx-col" style="color:var(--text-muted);font-size:12px;">34</td>
+                        <td>
+                            <div class="title-cell">
+                                <img class="poster-thumb" src="https://m.media-amazon.com/images/M/MV5BMTk5NjU4OTAtNTEyMS00ZjBiLTg0ZjMtOGJiMGJhNjQ3MzYxXkEyXkFqcGc@._V1_SX300.jpg" alt="" loading="lazy">
+                                <div class="title-info">
+                                    <h3>The Running Man</h3>
+                                    <span>133 min • United Kingdom, United States</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="type-badge movie">Movie</span></td>
+                        <td><span class="rating-badge mid">⭐ 6.4</span></td>
+                        <td style="white-space:nowrap;">2025</td>
+                        <td><div class="genre-tags"><span class="genre-tag">Action</span><span class="genre-tag">Adventure</span><span class="genre-tag">Sci-Fi</span></div></td>
+                        <td style="font-size:13px;">Edgar Wright</td>
+                        <td><span class="file-name" title="The.Running.Man.2025.1080p.WEBRip.10Bit.DDP5.1.x265-NeoNoir.mkv">The.Running.Man.2025.1080p.WEBRip.10Bit.DDP5.1.x265-NeoNoir.mkv</span></td>
+                        <td><button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/The.Running.Man.2025.1080p.WEBRip.10Bit.DDP5.1.x265-NeoNoir.mkv')" title="Play in Browser">▶</button></td>
+                        <td><a class="imdb-link" href="https://www.imdb.com/title/tt14107334/" target="_blank">IMDb ↗</a></td>
+                    </tr>
+                    <tr data-type="movie" data-rating="6.4" data-title="Alien: Covenant" data-year="2017" data-search="alien: covenant horror, sci-fi, thriller ridley scott michael fassbender, katherine waterston, billy crudup">
+                        <td class="idx-col" style="color:var(--text-muted);font-size:12px;">35</td>
+                        <td>
+                            <div class="title-cell">
+                                <img class="poster-thumb" src="https://m.media-amazon.com/images/M/MV5BMjhiYWQ4MTAtOGY1Zi00ZjcyLTk1ZDYtODI3ODRhNjE4MzZhXkEyXkFqcGc@._V1_SX300.jpg" alt="" loading="lazy">
+                                <div class="title-info">
+                                    <h3>Alien: Covenant</h3>
+                                    <span>122 min • United Kingdom, United States</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="type-badge movie">Movie</span></td>
+                        <td><span class="rating-badge mid">⭐ 6.4</span></td>
+                        <td style="white-space:nowrap;">2017</td>
+                        <td><div class="genre-tags"><span class="genre-tag">Horror</span><span class="genre-tag">Sci-Fi</span><span class="genre-tag">Thriller</span></div></td>
+                        <td style="font-size:13px;">Ridley Scott</td>
+                        <td><span class="file-name" title="Alien Covenant (2017)[720p - BDRip - Original [Tamil + Telugu + Hindi + Eng].mkv">Alien Covenant (2017)[720p - BDRip - Original [Tamil + Telugu + Hindi + Eng].mkv</span></td>
+                        <td><button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/Alien Covenant (2017)[720p - BDRip - Original [Tamil + Telugu + Hindi + Eng].mkv')" title="Play in Browser">▶</button></td>
+                        <td><a class="imdb-link" href="https://www.imdb.com/title/tt2316204/" target="_blank">IMDb ↗</a></td>
+                    </tr>
+                    <tr data-type="movie" data-rating="6.3" data-title="Zathura: A Space Adventure" data-year="2005" data-search="zathura: a space adventure action, adventure, comedy jon favreau josh hutcherson, jonah bobo, dax shepard">
+                        <td class="idx-col" style="color:var(--text-muted);font-size:12px;">36</td>
+                        <td>
+                            <div class="title-cell">
+                                <img class="poster-thumb" src="https://m.media-amazon.com/images/M/MV5BNDMzZDZhMTQtYzJkNi00OTI2LThjNDUtN2I2N2JjZmYwMWM5XkEyXkFqcGc@._V1_SX300.jpg" alt="" loading="lazy">
+                                <div class="title-info">
+                                    <h3>Zathura: A Space Adventure</h3>
+                                    <span>101 min • United States</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="type-badge movie">Movie</span></td>
+                        <td><span class="rating-badge mid">⭐ 6.3</span></td>
+                        <td style="white-space:nowrap;">2005</td>
+                        <td><div class="genre-tags"><span class="genre-tag">Action</span><span class="genre-tag">Adventure</span><span class="genre-tag">Comedy</span></div></td>
+                        <td style="font-size:13px;">Jon Favreau</td>
+                        <td><span class="file-name" title="Zathura A Space Adventure 2005 x264 720p Esub BluRay Dual Audio English Hindi GOPI SAHI.mkv">Zathura A Space Adventure 2005 x264 720p Esub BluRay Dual Audio English Hindi GOPI SAHI.mkv</span></td>
+                        <td><button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/Zathura A Space Adventure 2005 x264 720p Esub BluRay Dual Audio English Hindi GOPI SAHI.mkv')" title="Play in Browser">▶</button></td>
+                        <td><a class="imdb-link" href="https://www.imdb.com/title/tt0406375/" target="_blank">IMDb ↗</a></td>
+                    </tr>
+                    <tr data-type="movie" data-rating="6.2" data-title="Mercy" data-year="2026" data-search="mercy action, crime, drama timur bekmambetov chris pratt, rebecca ferguson, kali reis">
+                        <td class="idx-col" style="color:var(--text-muted);font-size:12px;">37</td>
+                        <td>
+                            <div class="title-cell">
+                                <img class="poster-thumb" src="https://m.media-amazon.com/images/M/MV5BMWJmYjcwMTMtMDU1ZC00ZGI5LTlmZDAtODI3NDA2ZTE5ZGVlXkEyXkFqcGc@._V1_SX300.jpg" alt="" loading="lazy">
+                                <div class="title-info">
+                                    <h3>Mercy</h3>
+                                    <span>99 min • Russia, United States</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="type-badge movie">Movie</span></td>
+                        <td><span class="rating-badge mid">⭐ 6.2</span></td>
+                        <td style="white-space:nowrap;">2026</td>
+                        <td><div class="genre-tags"><span class="genre-tag">Action</span><span class="genre-tag">Crime</span><span class="genre-tag">Drama</span></div></td>
+                        <td style="font-size:13px;">Timur Bekmambetov</td>
+                        <td><span class="file-name" title="Mercy.2026.1080p.WEBRip.AAC5.1.10bits.x265-Rapta.mkv">Mercy.2026.1080p.WEBRip.AAC5.1.10bits.x265-Rapta.mkv</span></td>
+                        <td><button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/Mercy.2026.1080p.WEBRip.AAC5.1.10bits.x265-Rapta.mkv')" title="Play in Browser">▶</button></td>
+                        <td><a class="imdb-link" href="https://www.imdb.com/title/tt31050594/" target="_blank">IMDb ↗</a></td>
+                    </tr>
+                    <tr data-type="movie" data-rating="6.2" data-title="Tron: Ares" data-year="2025" data-search="tron: ares action, adventure, sci-fi joachim rønning jared leto, greta lee, jeff bridges">
+                        <td class="idx-col" style="color:var(--text-muted);font-size:12px;">38</td>
+                        <td>
+                            <div class="title-cell">
+                                <img class="poster-thumb" src="https://m.media-amazon.com/images/M/MV5BYzNlY2RiYWEtMDA0YS00MTZkLWI5YmUtMDNiZDZlN2E4MTVlXkEyXkFqcGc@._V1_SX300.jpg" alt="" loading="lazy">
+                                <div class="title-info">
+                                    <h3>Tron: Ares</h3>
+                                    <span>119 min • United States, Canada, New Zealand</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="type-badge movie">Movie</span></td>
+                        <td><span class="rating-badge mid">⭐ 6.2</span></td>
+                        <td style="white-space:nowrap;">2025</td>
+                        <td><div class="genre-tags"><span class="genre-tag">Action</span><span class="genre-tag">Adventure</span><span class="genre-tag">Sci-Fi</span></div></td>
+                        <td style="font-size:13px;">Joachim Rønning</td>
+                        <td><span class="file-name" title="Tron.Ares.2025.IMAX.1080p.10bit.DS4K.DSNP.WEBRip.[Org.DDP5.1-Hindi_DDPA5.1-English].ESub.HEVC-The.PunisheR.mkv">Tron.Ares.2025.IMAX.1080p.10bit.DS4K.DSNP.WEBRip.[Org.DDP5.1-Hindi_DDPA5.1-English].ESub.HEVC-The.PunisheR.mkv</span></td>
+                        <td><button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/Tron.Ares.2025.IMAX.1080p.10bit.DS4K.DSNP.WEBRip.[Org.DDP5.1-Hindi_DDPA5.1-English].ESub.HEVC-The.PunisheR.mkv')" title="Play in Browser">▶</button></td>
+                        <td><a class="imdb-link" href="https://www.imdb.com/title/tt6604188/" target="_blank">IMDb ↗</a></td>
+                    </tr>
+                    <tr data-type="series" data-rating="6.2" data-title="Ms. Marvel" data-year="2022" data-search="ms. marvel action, adventure, comedy n/a iman vellani, matt lintz, zenobia shroff">
+                        <td class="idx-col" style="color:var(--text-muted);font-size:12px;">39</td>
+                        <td>
+                            <div class="title-cell">
+                                <img class="poster-thumb" src="https://m.media-amazon.com/images/M/MV5BNzlkNjBmOWUtOTgzZS00OWIzLThkNWEtZTg5MGY2ODAyYzZjXkEyXkFqcGc@._V1_SX300.jpg" alt="" loading="lazy">
+                                <div class="title-info">
+                                    <h3>Ms. Marvel</h3>
+                                    <span>N/A • United States</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="type-badge series">Series</span></td>
+                        <td><span class="rating-badge mid">⭐ 6.2</span></td>
+                        <td style="white-space:nowrap;">2022</td>
+                        <td><div class="genre-tags"><span class="genre-tag">Action</span><span class="genre-tag">Adventure</span><span class="genre-tag">Comedy</span></div></td>
+                        <td style="font-size:13px;">N/A</td>
+                        <td><span class="file-name" title="Ms.Marvel.S01E02.720p.WEB.x265-MiNX.mkv">Ms.Marvel.S01E02.720p.WEB.x265-MiNX.mkv</span></td>
+                        <td><button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/Ms.Marvel.S01E02.720p.WEB.x265-MiNX.mkv')" title="Play in Browser">▶</button></td>
+                        <td><a class="imdb-link" href="https://www.imdb.com/title/tt10857164/" target="_blank">IMDb ↗</a></td>
+                    </tr>
+                    <tr data-type="movie" data-rating="6.0" data-title="Coolie" data-year="2025" data-search="coolie action, crime, thriller lokesh kanagaraj rajinikanth, aamir khan, nagarjuna akkineni">
+                        <td class="idx-col" style="color:var(--text-muted);font-size:12px;">40</td>
+                        <td>
+                            <div class="title-cell">
+                                <img class="poster-thumb" src="https://m.media-amazon.com/images/M/MV5BOTYwYzYxMWYtZmI4MS00ZGRhLWEyMGEtZTdiODc3YjAyNDE0XkEyXkFqcGc@._V1_SX300.jpg" alt="" loading="lazy">
+                                <div class="title-info">
+                                    <h3>Coolie</h3>
+                                    <span>168 min • India</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="type-badge movie">Movie</span></td>
+                        <td><span class="rating-badge mid">⭐ 6.0</span></td>
+                        <td style="white-space:nowrap;">2025</td>
+                        <td><div class="genre-tags"><span class="genre-tag">Action</span><span class="genre-tag">Crime</span><span class="genre-tag">Thriller</span></div></td>
+                        <td style="font-size:13px;">Lokesh Kanagaraj</td>
+                        <td><span class="file-name" title="Coolie.2025.1080p.10bit.DS4K.AMZN.WEBRip.Hindi-Tamil.DDP5.1.x265.HEVC-Ospreay.mkv">Coolie.2025.1080p.10bit.DS4K.AMZN.WEBRip.Hindi-Tamil.DDP5.1.x265.HEVC-Ospreay.mkv</span></td>
+                        <td><button class="play-btn" onclick="openModal('file:///G:/Movies/South Indian Movies/Coolie.2025.1080p.10bit.DS4K.AMZN.WEBRip.Hindi-Tamil.DDP5.1.x265.HEVC-Ospreay.mkv')" title="Play in Browser">▶</button></td>
+                        <td><a class="imdb-link" href="https://www.imdb.com/title/tt27441481/" target="_blank">IMDb ↗</a></td>
+                    </tr>
+                    <tr data-type="movie" data-rating="5.6" data-title="Atlas" data-year="2024" data-search="atlas action, adventure, drama brad peyton jennifer lopez, simu liu, sterling k. brown">
+                        <td class="idx-col" style="color:var(--text-muted);font-size:12px;">41</td>
+                        <td>
+                            <div class="title-cell">
+                                <img class="poster-thumb" src="https://m.media-amazon.com/images/M/MV5BNDUwNTFkNzYtMGM5NS00NTc4LWEwMDUtMmE5MzgyMjcwOWM4XkEyXkFqcGc@._V1_SX300.jpg" alt="" loading="lazy">
+                                <div class="title-info">
+                                    <h3>Atlas</h3>
+                                    <span>118 min • United States</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="type-badge movie">Movie</span></td>
+                        <td><span class="rating-badge mid">⭐ 5.6</span></td>
+                        <td style="white-space:nowrap;">2024</td>
+                        <td><div class="genre-tags"><span class="genre-tag">Action</span><span class="genre-tag">Adventure</span><span class="genre-tag">Drama</span></div></td>
+                        <td style="font-size:13px;">Brad Peyton</td>
+                        <td><span class="file-name" title="Atlas.2024.WebRip.720p.x264.[Hindi.Tamil.Telugu.English].AAC.ESub.mkv">Atlas.2024.WebRip.720p.x264.[Hindi.Tamil.Telugu.English].AAC.ESub.mkv</span></td>
+                        <td><button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/Atlas.2024.WebRip.720p.x264.[Hindi.Tamil.Telugu.English].AAC.ESub.mkv')" title="Play in Browser">▶</button></td>
+                        <td><a class="imdb-link" href="https://www.imdb.com/title/tt14856980/" target="_blank">IMDb ↗</a></td>
+                    </tr>
+                    <tr data-type="movie" data-rating="5.5" data-title="Annabelle" data-year="2014" data-search="annabelle horror, mystery, thriller john r. leonetti ward horton, annabelle wallis, alfre woodard">
+                        <td class="idx-col" style="color:var(--text-muted);font-size:12px;">42</td>
+                        <td>
+                            <div class="title-cell">
+                                <img class="poster-thumb" src="https://m.media-amazon.com/images/M/MV5BNjkyMDU5ZWQtZDhkOC00ZWFjLWIyM2MtZWFhMDUzNjdlNzU2XkEyXkFqcGc@._V1_SX300.jpg" alt="" loading="lazy">
+                                <div class="title-info">
+                                    <h3>Annabelle</h3>
+                                    <span>99 min • United States</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="type-badge movie">Movie</span></td>
+                        <td><span class="rating-badge mid">⭐ 5.5</span></td>
+                        <td style="white-space:nowrap;">2014</td>
+                        <td><div class="genre-tags"><span class="genre-tag">Horror</span><span class="genre-tag">Mystery</span><span class="genre-tag">Thriller</span></div></td>
+                        <td style="font-size:13px;">John R. Leonetti</td>
+                        <td><span class="file-name" title="Annabelle 2014 720p BluRay x264 Hindi English DD 5.1 - LOKI - M2Tv.mkv">Annabelle 2014 720p BluRay x264 Hindi English DD 5.1 - LOKI - M2Tv.mkv</span></td>
+                        <td><button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/Annabelle 2014 720p BluRay x264 Hindi English DD 5.1 - LOKI - M2Tv.mkv')" title="Play in Browser">▶</button></td>
+                        <td><a class="imdb-link" href="https://www.imdb.com/title/tt3322940/" target="_blank">IMDb ↗</a></td>
+                    </tr>
+                    <tr data-type="movie" data-rating="5.4" data-title="Watchman" data-year="2019" data-search="watchman thriller a.l. vijay g.v. prakash kumar, samyuktha hegde, suman">
+                        <td class="idx-col" style="color:var(--text-muted);font-size:12px;">43</td>
+                        <td>
+                            <div class="title-cell">
+                                <img class="poster-thumb" src="https://m.media-amazon.com/images/M/MV5BMDgwZDczY2UtZjYyMC00ZTBiLWI2NDYtOTFkYWY3Mjc4ZTQ2XkEyXkFqcGdeQXVyMTEzNzg0Mjkx._V1_SX300.jpg" alt="" loading="lazy">
+                                <div class="title-info">
+                                    <h3>Watchman</h3>
+                                    <span>95 min • India</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="type-badge movie">Movie</span></td>
+                        <td><span class="rating-badge low">⭐ 5.4</span></td>
+                        <td style="white-space:nowrap;">2019</td>
+                        <td><div class="genre-tags"><span class="genre-tag">Thriller</span></div></td>
+                        <td style="font-size:13px;">A.L. Vijay</td>
+                        <td><span class="file-name" title="WatchMan.mkv">WatchMan.mkv</span></td>
+                        <td><button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/WatchMan.mkv')" title="Play in Browser">▶</button></td>
+                        <td><a class="imdb-link" href="https://www.imdb.com/title/tt9378320/" target="_blank">IMDb ↗</a></td>
+                    </tr>
+                    <tr data-type="movie" data-rating="5.2" data-title="Moonfall" data-year="2022" data-search="moonfall action, adventure, sci-fi roland emmerich halle berry, patrick wilson, john bradley">
+                        <td class="idx-col" style="color:var(--text-muted);font-size:12px;">44</td>
+                        <td>
+                            <div class="title-cell">
+                                <img class="poster-thumb" src="https://m.media-amazon.com/images/M/MV5BOWY0YzViYzgtMzM5YS00YzI1LTk5MTQtZjdiZjUyZjQ5ZGMwXkEyXkFqcGc@._V1_SX300.jpg" alt="" loading="lazy">
+                                <div class="title-info">
+                                    <h3>Moonfall</h3>
+                                    <span>130 min • United States, China, United Kingdom, Canada, Hong Kong</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="type-badge movie">Movie</span></td>
+                        <td><span class="rating-badge low">⭐ 5.2</span></td>
+                        <td style="white-space:nowrap;">2022</td>
+                        <td><div class="genre-tags"><span class="genre-tag">Action</span><span class="genre-tag">Adventure</span><span class="genre-tag">Sci-Fi</span></div></td>
+                        <td style="font-size:13px;">Roland Emmerich</td>
+                        <td><span class="file-name" title="Moonfall (2022) (1080p DS4K Bluray SDR x265 HEVC 10bit Hindi _ English) [ZiroMB].mkv">Moonfall (2022) (1080p DS4K Bluray SDR x265 HEVC 10bit Hindi _ English) [ZiroMB].mkv</span></td>
+                        <td><button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/Moonfall (2022) (1080p DS4K Bluray SDR x265 HEVC 10bit Hindi _ English) [ZiroMB].mkv')" title="Play in Browser">▶</button></td>
+                        <td><a class="imdb-link" href="https://www.imdb.com/title/tt5834426/" target="_blank">IMDb ↗</a></td>
+                    </tr>
+                    <tr data-type="series" data-rating="5.2" data-title="She-Hulk: Attorney at Law" data-year="2022" data-search="she-hulk: attorney at law action, adventure, comedy n/a tatiana maslany, ginger gonzaga, malia arrayah">
+                        <td class="idx-col" style="color:var(--text-muted);font-size:12px;">45</td>
+                        <td>
+                            <div class="title-cell">
+                                <img class="poster-thumb" src="https://m.media-amazon.com/images/M/MV5BNjg4ZTQ1MjctNzEyMS00YWM2LTk1ZTQtNDU3ZDJjNjhhMDhkXkEyXkFqcGc@._V1_SX300.jpg" alt="" loading="lazy">
+                                <div class="title-info">
+                                    <h3>She-Hulk: Attorney at Law</h3>
+                                    <span>N/A • United States</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="type-badge series">Series</span></td>
+                        <td><span class="rating-badge low">⭐ 5.2</span></td>
+                        <td style="white-space:nowrap;">2022</td>
+                        <td><div class="genre-tags"><span class="genre-tag">Action</span><span class="genre-tag">Adventure</span><span class="genre-tag">Comedy</span></div></td>
+                        <td style="font-size:13px;">N/A</td>
+                        <td><span class="file-name" title="She-Hulk.Attorney.at.Law.S01E01.WEB.x264-TORRENTGALAXY (1).mkv">She-Hulk.Attorney.at.Law.S01E01.WEB.x264-TORRENTGALAXY (1).mkv</span></td>
+                        <td><button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/She-Hulk.Attorney.at.Law.S01E01.WEB.x264-TORRENTGALAXY (1).mkv')" title="Play in Browser">▶</button></td>
+                        <td><a class="imdb-link" href="https://www.imdb.com/title/tt10857160/" target="_blank">IMDb ↗</a></td>
+                    </tr>
+                    <tr data-type="movie" data-rating="4.7" data-title="Borderlands" data-year="2024" data-search="borderlands action, adventure, comedy eli roth cate blanchett, kevin hart, edgar ramírez">
+                        <td class="idx-col" style="color:var(--text-muted);font-size:12px;">46</td>
+                        <td>
+                            <div class="title-cell">
+                                <img class="poster-thumb" src="https://m.media-amazon.com/images/M/MV5BMDhkMzQzZmQtOGQ1NS00Y2FhLTkzYjAtNWE1MmRiOWM1MjUzXkEyXkFqcGc@._V1_SX300.jpg" alt="" loading="lazy">
+                                <div class="title-info">
+                                    <h3>Borderlands</h3>
+                                    <span>101 min • United States, Hungary</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="type-badge movie">Movie</span></td>
+                        <td><span class="rating-badge low">⭐ 4.7</span></td>
+                        <td style="white-space:nowrap;">2024</td>
+                        <td><div class="genre-tags"><span class="genre-tag">Action</span><span class="genre-tag">Adventure</span><span class="genre-tag">Comedy</span></div></td>
+                        <td style="font-size:13px;">Eli Roth</td>
+                        <td><span class="file-name" title="Borderlands.2024.720p.WEBRip.800MB.x264-GalaxyRG.mkv">Borderlands.2024.720p.WEBRip.800MB.x264-GalaxyRG.mkv</span></td>
+                        <td><button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/Borderlands.2024.720p.WEBRip.800MB.x264-GalaxyRG.mkv')" title="Play in Browser">▶</button></td>
+                        <td><a class="imdb-link" href="https://www.imdb.com/title/tt4978420/" target="_blank">IMDb ↗</a></td>
+                    </tr>
+                    <tr data-type="movie" data-rating="4.3" data-title="Fantastic Four" data-year="2015" data-search="fantastic four action, adventure, sci-fi josh trank miles teller, kate mara, michael b. jordan">
+                        <td class="idx-col" style="color:var(--text-muted);font-size:12px;">47</td>
+                        <td>
+                            <div class="title-cell">
+                                <img class="poster-thumb" src="https://m.media-amazon.com/images/M/MV5BMTk0OTMyMDA0OF5BMl5BanBnXkFtZTgwMzY5NTkzNTE@._V1_SX300.jpg" alt="" loading="lazy">
+                                <div class="title-info">
+                                    <h3>Fantastic Four</h3>
+                                    <span>100 min • United States, Germany, United Kingdom, Canada</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="type-badge movie">Movie</span></td>
+                        <td><span class="rating-badge low">⭐ 4.3</span></td>
+                        <td style="white-space:nowrap;">2015</td>
+                        <td><div class="genre-tags"><span class="genre-tag">Action</span><span class="genre-tag">Adventure</span><span class="genre-tag">Sci-Fi</span></div></td>
+                        <td style="font-size:13px;">Josh Trank</td>
+                        <td><span class="file-name" title="Fantastic Four 2015 www.khatrimaza.org Dual Audio BRRip 480p.MKV">Fantastic Four 2015 www.khatrimaza.org Dual Audio BRRip 480p.MKV</span></td>
+                        <td><button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/Fantastic Four 2015 www.khatrimaza.org Dual Audio BRRip 480p.MKV')" title="Play in Browser">▶</button></td>
+                        <td><a class="imdb-link" href="https://www.imdb.com/title/tt1502712/" target="_blank">IMDb ↗</a></td>
+                    </tr>
+                    <tr data-type="movie" data-rating="0" data-title="Kishkindhapuri" data-year="2025" data-search="kishkindhapuri horror koushik pegallapati anupama parameswaran, sai srinivas bellamkonda, makrand deshpande">
+                        <td class="idx-col" style="color:var(--text-muted);font-size:12px;">48</td>
+                        <td>
+                            <div class="title-cell">
+                                <img class="poster-thumb" src="https://m.media-amazon.com/images/M/MV5BYmVlYjhhNzAtZDczYy00Mzk2LWIzMTUtYTI2MDA4ZmVhZjg3XkEyXkFqcGc@._V1_SX300.jpg" alt="" loading="lazy">
+                                <div class="title-info">
+                                    <h3>Kishkindhapuri</h3>
+                                    <span>N/A • India</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="type-badge movie">Movie</span></td>
+                        <td><span class="rating-badge low">⭐ N/A</span></td>
+                        <td style="white-space:nowrap;">2025</td>
+                        <td><div class="genre-tags"><span class="genre-tag">Horror</span></div></td>
+                        <td style="font-size:13px;">Koushik Pegallapati</td>
+                        <td><span class="file-name" title="Kishkindhapuri (2025) 720p WEBRip x265 AAC [ Hin, Mal ] ESub.mkv">Kishkindhapuri (2025) 720p WEBRip x265 AAC [ Hin, Mal ] ESub.mkv</span></td>
+                        <td><button class="play-btn" onclick="openModal('file:///G:/Movies/South Indian Movies/Kishkindhapuri (2025) 720p WEBRip x265 AAC [ Hin, Mal ] ESub.mkv')" title="Play in Browser">▶</button></td>
+                        <td><a class="imdb-link" href="https://www.imdb.com/title/tt32175880/" target="_blank">IMDb ↗</a></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <div id="cardsGrid">
+            <div class="card-item" data-type="movie" data-rating="8.6" data-title="Se7en" data-year="1995" data-search="se7en crime, drama, mystery david fincher morgan freeman, brad pitt, kevin spacey">
+                <img class="card-poster" src="https://m.media-amazon.com/images/M/MV5BY2IzNzMxZjctZjUxZi00YzAxLTk3ZjMtODFjODdhMDU5NDM1XkEyXkFqcGc@._V1_SX300.jpg" alt="" loading="lazy">
+                <div class="card-content">
+                    <div class="card-title" title="Se7en">Se7en</div>
+                    <div class="card-meta">1995 • 127 min</div>
+                    <div style="margin-bottom:8px;"><span class="rating-badge high">⭐ 8.6</span></div>
+                    <div class="card-actions">
+                        <button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/se7en.1995.remastered.720p.bluray.x264.YIFY.mkv')" title="Play in Browser">▶</button>
+                        <a class="imdb-link" href="https://www.imdb.com/title/tt0114369/" target="_blank">IMDb ↗</a>
+                    </div>
+                </div>
+            </div>
+            <div class="card-item" data-type="movie" data-rating="8.5" data-title="Parasite" data-year="2019" data-search="parasite drama, thriller bong joon ho song kang-ho, lee sun-kyun, cho yeo-jeong">
+                <img class="card-poster" src="https://m.media-amazon.com/images/M/MV5BYjk1Y2U4MjQtY2ZiNS00OWQyLWI3MmYtZWUwNmRjYWRiNWNhXkEyXkFqcGc@._V1_SX300.jpg" alt="" loading="lazy">
+                <div class="card-content">
+                    <div class="card-title" title="Parasite">Parasite</div>
+                    <div class="card-meta">2019 • 132 min</div>
+                    <div style="margin-bottom:8px;"><span class="rating-badge high">⭐ 8.5</span></div>
+                    <div class="card-actions">
+                        <button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/Parasite.2019.720p.BluRay.Hindi.Dual-Audio.x264.6CH-KatmovieHD.nl.mkv')" title="Play in Browser">▶</button>
+                        <a class="imdb-link" href="https://www.imdb.com/title/tt6751668/" target="_blank">IMDb ↗</a>
+                    </div>
+                </div>
+            </div>
+            <div class="card-item" data-type="movie" data-rating="8.4" data-title="Inglourious Basterds" data-year="2009" data-search="inglourious basterds adventure, drama, war quentin tarantino brad pitt, diane kruger, eli roth">
+                <img class="card-poster" src="https://m.media-amazon.com/images/M/MV5BODZhMWJlNjYtNDExNC00MTIzLTllM2ItOGQ2NGVjNDQ3MzkzXkEyXkFqcGc@._V1_SX300.jpg" alt="" loading="lazy">
+                <div class="card-content">
+                    <div class="card-title" title="Inglourious Basterds">Inglourious Basterds</div>
+                    <div class="card-meta">2009 • 153 min</div>
+                    <div style="margin-bottom:8px;"><span class="rating-badge high">⭐ 8.4</span></div>
+                    <div class="card-actions">
+                        <button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/Inglourious Basterds 2009 720p Esub BluRay Dual Audio English Hindi GOPISAHI.mkv')" title="Play in Browser">▶</button>
+                        <a class="imdb-link" href="https://www.imdb.com/title/tt0361748/" target="_blank">IMDb ↗</a>
+                    </div>
+                </div>
+            </div>
+            <div class="card-item" data-type="movie" data-rating="8.4" data-title="Avengers: Endgame" data-year="2019" data-search="avengers: endgame action, adventure, sci-fi anthony russo, joe russo robert downey jr., chris evans, mark ruffalo">
+                <img class="card-poster" src="https://m.media-amazon.com/images/M/MV5BMTc5MDE2ODcwNV5BMl5BanBnXkFtZTgwMzI2NzQ2NzM@._V1_SX300.jpg" alt="" loading="lazy">
+                <div class="card-content">
+                    <div class="card-title" title="Avengers: Endgame">Avengers: Endgame</div>
+                    <div class="card-meta">2019 • 181 min</div>
+                    <div style="margin-bottom:8px;"><span class="rating-badge high">⭐ 8.4</span></div>
+                    <div class="card-actions">
+                        <button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/Avengers Endgame 2019 x264 720p Esub BluRay 5.1 Dual Audio English Hindi GOPISAHI.mkv')" title="Play in Browser">▶</button>
+                        <a class="imdb-link" href="https://www.imdb.com/title/tt4154796/" target="_blank">IMDb ↗</a>
+                    </div>
+                </div>
+            </div>
+            <div class="card-item" data-type="movie" data-rating="8.4" data-title="Avengers: Infinity War" data-year="2018" data-search="avengers: infinity war action, adventure, sci-fi anthony russo, joe russo robert downey jr., chris hemsworth, mark ruffalo">
+                <img class="card-poster" src="https://m.media-amazon.com/images/M/MV5BMjMxNjY2MDU1OV5BMl5BanBnXkFtZTgwNzY1MTUwNTM@._V1_SX300.jpg" alt="" loading="lazy">
+                <div class="card-content">
+                    <div class="card-title" title="Avengers: Infinity War">Avengers: Infinity War</div>
+                    <div class="card-meta">2018 • 149 min</div>
+                    <div style="margin-bottom:8px;"><span class="rating-badge high">⭐ 8.4</span></div>
+                    <div class="card-actions">
+                        <button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/Avengers.Infinity.War.2018.720p.BluRay.Dual.Audio.Hindi.640kbps.Eng-KartiKing.mkv')" title="Play in Browser">▶</button>
+                        <a class="imdb-link" href="https://www.imdb.com/title/tt4154756/" target="_blank">IMDb ↗</a>
+                    </div>
+                </div>
+            </div>
+            <div class="card-item" data-type="series" data-rating="8.3" data-title="House of the Dragon" data-year="2022–" data-search="house of the dragon action, adventure, drama n/a matt smith, emma d'arcy, olivia cooke">
+                <img class="card-poster" src="https://m.media-amazon.com/images/M/MV5BZGM4MTczODQtNGIxOC00Y2U2LTk1YmItNzA2N2VhYmE0Y2YwXkEyXkFqcGc@._V1_SX300.jpg" alt="" loading="lazy">
+                <div class="card-content">
+                    <div class="card-title" title="House of the Dragon">House of the Dragon</div>
+                    <div class="card-meta">2022– • N/A</div>
+                    <div style="margin-bottom:8px;"><span class="rating-badge high">⭐ 8.3</span></div>
+                    <div class="card-actions">
+                        <button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/House.of.the.Dragon.S01E02.WEB.x264-TORRENTGALAXY.mkv')" title="Play in Browser">▶</button>
+                        <a class="imdb-link" href="https://www.imdb.com/title/tt11198330/" target="_blank">IMDb ↗</a>
+                    </div>
+                </div>
+            </div>
+            <div class="card-item" data-type="movie" data-rating="8.2" data-title="A Silent Voice: The Movie" data-year="2016" data-search="a silent voice: the movie animation, drama naoko yamada miyu irino, saori hayami, aoi yûki">
+                <img class="card-poster" src="https://m.media-amazon.com/images/M/MV5BOTFiNzRiOWEtYTQwNy00NmRiLWE0ZWYtNTE0YjExZjFmZjkwXkEyXkFqcGc@._V1_SX300.jpg" alt="" loading="lazy">
+                <div class="card-content">
+                    <div class="card-title" title="A Silent Voice: The Movie">A Silent Voice: The Movie</div>
+                    <div class="card-meta">2016 • 130 min</div>
+                    <div style="margin-bottom:8px;"><span class="rating-badge high">⭐ 8.2</span></div>
+                    <div class="card-actions">
+                        <button class="play-btn" onclick="openModal('file:///G:/Movies/Cartoons/A Silent Voice 2016 x264 720p Esub BluRay English Hindi Japanese THE GOPI SAHI.mkv')" title="Play in Browser">▶</button>
+                        <a class="imdb-link" href="https://www.imdb.com/title/tt5323662/" target="_blank">IMDb ↗</a>
+                    </div>
+                </div>
+            </div>
+            <div class="card-item" data-type="movie" data-rating="8.2" data-title="Batman Begins" data-year="2005" data-search="batman begins action, crime, drama christopher nolan christian bale, michael caine, ken watanabe">
+                <img class="card-poster" src="https://m.media-amazon.com/images/M/MV5BMzA2NDQzZDEtNDU5Ni00YTlkLTg2OWEtYmQwM2Y1YTBjMjFjXkEyXkFqcGc@._V1_SX300.jpg" alt="" loading="lazy">
+                <div class="card-content">
+                    <div class="card-title" title="Batman Begins">Batman Begins</div>
+                    <div class="card-meta">2005 • 140 min</div>
+                    <div style="margin-bottom:8px;"><span class="rating-badge high">⭐ 8.2</span></div>
+                    <div class="card-actions">
+                        <button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/Batman Begins (2006).mkv')" title="Play in Browser">▶</button>
+                        <a class="imdb-link" href="https://www.imdb.com/title/tt0372784/" target="_blank">IMDb ↗</a>
+                    </div>
+                </div>
+            </div>
+            <div class="card-item" data-type="movie" data-rating="8.2" data-title="Batman Begins" data-year="2005" data-search="batman begins action, crime, drama christopher nolan christian bale, michael caine, ken watanabe">
+                <img class="card-poster" src="https://m.media-amazon.com/images/M/MV5BMzA2NDQzZDEtNDU5Ni00YTlkLTg2OWEtYmQwM2Y1YTBjMjFjXkEyXkFqcGc@._V1_SX300.jpg" alt="" loading="lazy">
+                <div class="card-content">
+                    <div class="card-title" title="Batman Begins">Batman Begins</div>
+                    <div class="card-meta">2005 • 140 min</div>
+                    <div style="margin-bottom:8px;"><span class="rating-badge high">⭐ 8.2</span></div>
+                    <div class="card-actions">
+                        <button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/Batman Begins 2005 720p BluRay Hindi English x264 AC3-LOKiHD.mkv')" title="Play in Browser">▶</button>
+                        <a class="imdb-link" href="https://www.imdb.com/title/tt0372784/" target="_blank">IMDb ↗</a>
+                    </div>
+                </div>
+            </div>
+            <div class="card-item" data-type="movie" data-rating="8.1" data-title="Catch Me If You Can" data-year="2002" data-search="catch me if you can biography, crime, drama steven spielberg leonardo dicaprio, tom hanks, christopher walken">
+                <img class="card-poster" src="https://m.media-amazon.com/images/M/MV5BMTY5MzYzNjc5NV5BMl5BanBnXkFtZTYwNTUyNTc2._V1_SX300.jpg" alt="" loading="lazy">
+                <div class="card-content">
+                    <div class="card-title" title="Catch Me If You Can">Catch Me If You Can</div>
+                    <div class="card-meta">2002 • 141 min</div>
+                    <div style="margin-bottom:8px;"><span class="rating-badge high">⭐ 8.1</span></div>
+                    <div class="card-actions">
+                        <button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/Catch.Me.If.You.Can.2002.720p.BluRay.x264.Hindi.Eng.AC3-ETRG.mkv')" title="Play in Browser">▶</button>
+                        <a class="imdb-link" href="https://www.imdb.com/title/tt0264464/" target="_blank">IMDb ↗</a>
+                    </div>
+                </div>
+            </div>
+            <div class="card-item" data-type="series" data-rating="7.9" data-title="Bahubali" data-year="2008–2009" data-search="bahubali drama n/a rahul sinha, sudhanshu sharan, pankaj tripathi">
+                <img class="card-poster" src="https://m.media-amazon.com/images/M/MV5BMGNjMjRjY2QtOTNiNi00ZmE0LTkwNjYtYTVhNDE2Yzk0OTZhXkEyXkFqcGc@._V1_SX300.jpg" alt="" loading="lazy">
+                <div class="card-content">
+                    <div class="card-title" title="Bahubali">Bahubali</div>
+                    <div class="card-meta">2008–2009 • N/A</div>
+                    <div style="margin-bottom:8px;"><span class="rating-badge high">⭐ 7.9</span></div>
+                    <div class="card-actions">
+                        <button class="play-btn" onclick="openModal('file:///G:/Movies/South Indian Movies/Bahubali.mkv')" title="Play in Browser">▶</button>
+                        <a class="imdb-link" href="https://www.imdb.com/title/tt4549714/" target="_blank">IMDb ↗</a>
+                    </div>
+                </div>
+            </div>
+            <div class="card-item" data-type="movie" data-rating="7.9" data-title="Arrival" data-year="2016" data-search="arrival drama, mystery, sci-fi denis villeneuve amy adams, jeremy renner, forest whitaker">
+                <img class="card-poster" src="https://m.media-amazon.com/images/M/MV5BMTExMzU0ODcxNDheQTJeQWpwZ15BbWU4MDE1OTI4MzAy._V1_SX300.jpg" alt="" loading="lazy">
+                <div class="card-content">
+                    <div class="card-title" title="Arrival">Arrival</div>
+                    <div class="card-meta">2016 • 116 min</div>
+                    <div style="margin-bottom:8px;"><span class="rating-badge high">⭐ 7.9</span></div>
+                    <div class="card-actions">
+                        <button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/Arrival.2016.720p.BluRay.x264-[YTS.AG].mp4')" title="Play in Browser">▶</button>
+                        <a class="imdb-link" href="https://www.imdb.com/title/tt2543164/" target="_blank">IMDb ↗</a>
+                    </div>
+                </div>
+            </div>
+            <div class="card-item" data-type="movie" data-rating="7.9" data-title="Avatar" data-year="2009" data-search="avatar action, adventure, fantasy james cameron sam worthington, zoe saldaña, sigourney weaver">
+                <img class="card-poster" src="https://m.media-amazon.com/images/M/MV5BMDEzMmQwZjctZWU2My00MWNlLWE0NjItMDJlYTRlNGJiZjcyXkEyXkFqcGc@._V1_SX300.jpg" alt="" loading="lazy">
+                <div class="card-content">
+                    <div class="card-title" title="Avatar">Avatar</div>
+                    <div class="card-meta">2009 • 162 min</div>
+                    <div style="margin-bottom:8px;"><span class="rating-badge high">⭐ 7.9</span></div>
+                    <div class="card-actions">
+                        <button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/Avatar.mkv')" title="Play in Browser">▶</button>
+                        <a class="imdb-link" href="https://www.imdb.com/title/tt0499549/" target="_blank">IMDb ↗</a>
+                    </div>
+                </div>
+            </div>
+            <div class="card-item" data-type="movie" data-rating="7.7" data-title="Door to Door" data-year="2002" data-search="door to door biography, drama steven schachter william h. macy, kyra sedgwick, kathy baker">
+                <img class="card-poster" src="https://m.media-amazon.com/images/M/MV5BNjQ5YzI4NGEtNTJlYy00MDI0LTg4MjktZWIxZDg0ZGJkODVhXkEyXkFqcGc@._V1_SX300.jpg" alt="" loading="lazy">
+                <div class="card-content">
+                    <div class="card-title" title="Door to Door">Door to Door</div>
+                    <div class="card-meta">2002 • 90 min</div>
+                    <div style="margin-bottom:8px;"><span class="rating-badge high">⭐ 7.7</span></div>
+                    <div class="card-actions">
+                        <button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/Door.To.Door.2002.720p.WEBRip.x264.AAC-[YTS.MX].mp4')" title="Play in Browser">▶</button>
+                        <a class="imdb-link" href="https://www.imdb.com/title/tt0274468/" target="_blank">IMDb ↗</a>
+                    </div>
+                </div>
+            </div>
+            <div class="card-item" data-type="movie" data-rating="7.6" data-title="Wake Up Sid" data-year="2009" data-search="wake up sid comedy, drama, romance ayan mukerji ranbir kapoor, konkona sen sharma, supriya pathak">
+                <img class="card-poster" src="https://m.media-amazon.com/images/M/MV5BNWRjZTZiNTMtZTkwNi00MDIxLTgyYjAtODE5Y2Y2ZGRiYjRlXkEyXkFqcGc@._V1_SX300.jpg" alt="" loading="lazy">
+                <div class="card-content">
+                    <div class="card-title" title="Wake Up Sid">Wake Up Sid</div>
+                    <div class="card-meta">2009 • 138 min</div>
+                    <div style="margin-bottom:8px;"><span class="rating-badge high">⭐ 7.6</span></div>
+                    <div class="card-actions">
+                        <button class="play-btn" onclick="openModal('file:///G:/Movies/Bollywood/Wake.Up.Sid.2009.720p.BluRay.x264.AAC-[YTS.MX].mp4')" title="Play in Browser">▶</button>
+                        <a class="imdb-link" href="https://www.imdb.com/title/tt1324059/" target="_blank">IMDb ↗</a>
+                    </div>
+                </div>
+            </div>
+            <div class="card-item" data-type="movie" data-rating="7.6" data-title="American Psycho" data-year="2000" data-search="american psycho crime, drama, horror mary harron christian bale, justin theroux, josh lucas">
+                <img class="card-poster" src="https://m.media-amazon.com/images/M/MV5BNzBjM2I5ZjUtNmIzNy00OGNkLWIwZDMtOTAwYWUwMzA2YjdlXkEyXkFqcGc@._V1_SX300.jpg" alt="" loading="lazy">
+                <div class="card-content">
+                    <div class="card-title" title="American Psycho">American Psycho</div>
+                    <div class="card-meta">2000 • 102 min</div>
+                    <div style="margin-bottom:8px;"><span class="rating-badge high">⭐ 7.6</span></div>
+                    <div class="card-actions">
+                        <button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/American.Psycho.2000.1080p.BrRip.x264.YIFY.mp4')" title="Play in Browser">▶</button>
+                        <a class="imdb-link" href="https://www.imdb.com/title/tt0144084/" target="_blank">IMDb ↗</a>
+                    </div>
+                </div>
+            </div>
+            <div class="card-item" data-type="movie" data-rating="7.6" data-title="Marvel One-Shot: Agent Carter" data-year="2013" data-search="marvel one-shot: agent carter short, action, adventure, sci-fi louis d'esposito hayley atwell, bradley whitford, dominic cooper, tim trobec">
+                <img class="card-poster" src="https://m.media-amazon.com/images/M/MV5BZDIwZTM4M2QtMWFhYy00N2VmLWFlMjItMzI3NjBjYTc0OTMxXkEyXkFqcGdeQXVyNTE1NjY5Mg@@._V1_SX300.jpg" alt="" loading="lazy">
+                <div class="card-content">
+                    <div class="card-title" title="Marvel One-Shot: Agent Carter">Marvel One-Shot: Agent Carter</div>
+                    <div class="card-meta">2013 • 15 min</div>
+                    <div style="margin-bottom:8px;"><span class="rating-badge high">⭐ 7.6</span></div>
+                    <div class="card-actions">
+                        <button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/Marvel One Shot - Agent Carter (2013) (1080p BluRay x265 HEVC 10bit DTS 5.1 Anna) [UTR].mkv')" title="Play in Browser">▶</button>
+                        <a class="imdb-link" href="https://www.imdb.com/title/tt3067038/" target="_blank">IMDb ↗</a>
+                    </div>
+                </div>
+            </div>
+            <div class="card-item" data-type="movie" data-rating="7.5" data-title="A Bittersweet Life" data-year="2005" data-search="a bittersweet life action, crime, drama kim jee-woon lee byung-hun, shin min-a, kim yeong-cheol">
+                <img class="card-poster" src="https://m.media-amazon.com/images/M/MV5BNmQyNzdkZmItM2ZiMi00ZjQ3LWE4YjctZDdlNDEwNjFiMjJkXkEyXkFqcGc@._V1_SX300.jpg" alt="" loading="lazy">
+                <div class="card-content">
+                    <div class="card-title" title="A Bittersweet Life">A Bittersweet Life</div>
+                    <div class="card-meta">2005 • 119 min</div>
+                    <div style="margin-bottom:8px;"><span class="rating-badge high">⭐ 7.5</span></div>
+                    <div class="card-actions">
+                        <button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/A Bittersweet Life 2005 1080p x264_reencoded.mp4')" title="Play in Browser">▶</button>
+                        <a class="imdb-link" href="https://www.imdb.com/title/tt0456912/" target="_blank">IMDb ↗</a>
+                    </div>
+                </div>
+            </div>
+            <div class="card-item" data-type="movie" data-rating="7.4" data-title="Amar Akbar Anthony" data-year="1977" data-search="amar akbar anthony action, comedy, drama manmohan desai vinod khanna, rishi kapoor, amitabh bachchan">
+                <img class="card-poster" src="https://m.media-amazon.com/images/M/MV5BNmJhMDgyNDEtY2RkMC00NjNmLTg3MGItNWYxZTAzNjE0NjgwXkEyXkFqcGc@._V1_SX300.jpg" alt="" loading="lazy">
+                <div class="card-content">
+                    <div class="card-title" title="Amar Akbar Anthony">Amar Akbar Anthony</div>
+                    <div class="card-meta">1977 • 184 min</div>
+                    <div style="margin-bottom:8px;"><span class="rating-badge mid">⭐ 7.4</span></div>
+                    <div class="card-actions">
+                        <button class="play-btn" onclick="openModal('file:///G:/Movies/Bollywood/Amar Akbar Anthony (1977) Hindi 1080p WEBDL.mp4')" title="Play in Browser">▶</button>
+                        <a class="imdb-link" href="https://www.imdb.com/title/tt0075669/" target="_blank">IMDb ↗</a>
+                    </div>
+                </div>
+            </div>
+            <div class="card-item" data-type="movie" data-rating="7.3" data-title="Avengers: Age of Ultron" data-year="2015" data-search="avengers: age of ultron action, adventure, sci-fi joss whedon robert downey jr., chris evans, mark ruffalo">
+                <img class="card-poster" src="https://m.media-amazon.com/images/M/MV5BODBhYTg1NGQtNGVmNS00ZTdiLThjYTYtZDFkNzRiNTZmNDZjXkEyXkFqcGc@._V1_SX300.jpg" alt="" loading="lazy">
+                <div class="card-content">
+                    <div class="card-title" title="Avengers: Age of Ultron">Avengers: Age of Ultron</div>
+                    <div class="card-meta">2015 • 141 min</div>
+                    <div style="margin-bottom:8px;"><span class="rating-badge mid">⭐ 7.3</span></div>
+                    <div class="card-actions">
+                        <button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/Avengers Age of Ultron (2015) [Worldfree4u.trade] Hindi 720p BluRay x264 AAC.mkv')" title="Play in Browser">▶</button>
+                        <a class="imdb-link" href="https://www.imdb.com/title/tt2395427/" target="_blank">IMDb ↗</a>
+                    </div>
+                </div>
+            </div>
+            <div class="card-item" data-type="movie" data-rating="7.3" data-title="Avengers: Age of Ultron" data-year="2015" data-search="avengers: age of ultron action, adventure, sci-fi joss whedon robert downey jr., chris evans, mark ruffalo">
+                <img class="card-poster" src="https://m.media-amazon.com/images/M/MV5BODBhYTg1NGQtNGVmNS00ZTdiLThjYTYtZDFkNzRiNTZmNDZjXkEyXkFqcGc@._V1_SX300.jpg" alt="" loading="lazy">
+                <div class="card-content">
+                    <div class="card-title" title="Avengers: Age of Ultron">Avengers: Age of Ultron</div>
+                    <div class="card-meta">2015 • 141 min</div>
+                    <div style="margin-bottom:8px;"><span class="rating-badge mid">⭐ 7.3</span></div>
+                    <div class="card-actions">
+                        <button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/Avengers.Age.of.Ultron.2015.720p.BluRay.Dual.Audio.Hindi.640kbps.Eng-KartiKing.mkv')" title="Play in Browser">▶</button>
+                        <a class="imdb-link" href="https://www.imdb.com/title/tt2395427/" target="_blank">IMDb ↗</a>
+                    </div>
+                </div>
+            </div>
+            <div class="card-item" data-type="series" data-rating="7.3" data-title="Halo" data-year="2022–2024" data-search="halo action, adventure, sci-fi n/a pablo schreiber, shabana azmi, natascha mcelhone">
+                <img class="card-poster" src="https://m.media-amazon.com/images/M/MV5BYzNkODg3OTYtM2EyZC00NmEyLTgzZDktYjY5NGNjZmQ5ZDRiXkEyXkFqcGc@._V1_SX300.jpg" alt="" loading="lazy">
+                <div class="card-content">
+                    <div class="card-title" title="Halo">Halo</div>
+                    <div class="card-meta">2022–2024 • N/A</div>
+                    <div style="margin-bottom:8px;"><span class="rating-badge mid">⭐ 7.3</span></div>
+                    <div class="card-actions">
+                        <button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/Halo.S01E06.WEB.x264-TORRENTGALAXY.mkv')" title="Play in Browser">▶</button>
+                        <a class="imdb-link" href="https://www.imdb.com/title/tt2934286/" target="_blank">IMDb ↗</a>
+                    </div>
+                </div>
+            </div>
+            <div class="card-item" data-type="series" data-rating="7.3" data-title="Moon Knight" data-year="2022" data-search="moon knight action, adventure, fantasy n/a oscar isaac, ethan hawke, may calamawy">
+                <img class="card-poster" src="https://m.media-amazon.com/images/M/MV5BNDAzNmYwZjgtNDc3YS00ZDMyLTk0MjktMTg4MGNmNGU3MjlhXkEyXkFqcGc@._V1_SX300.jpg" alt="" loading="lazy">
+                <div class="card-content">
+                    <div class="card-title" title="Moon Knight">Moon Knight</div>
+                    <div class="card-meta">2022 • 31S min</div>
+                    <div style="margin-bottom:8px;"><span class="rating-badge mid">⭐ 7.3</span></div>
+                    <div class="card-actions">
+                        <button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/Moon.Knight.S01E05.WEB.x264-TORRENTGALAXY.mkv')" title="Play in Browser">▶</button>
+                        <a class="imdb-link" href="https://www.imdb.com/title/tt10234724/" target="_blank">IMDb ↗</a>
+                    </div>
+                </div>
+            </div>
+            <div class="card-item" data-type="movie" data-rating="7.2" data-title="Send Help" data-year="2026" data-search="send help adventure, horror, thriller sam raimi rachel mcadams, dylan o'brien, edyll ismail">
+                <img class="card-poster" src="https://m.media-amazon.com/images/M/MV5BOTgxOWY5NTMtYjdiNi00NTIyLTkwMTQtMWNjM2IzYTU0ODgyXkEyXkFqcGc@._V1_SX300.jpg" alt="" loading="lazy">
+                <div class="card-content">
+                    <div class="card-title" title="Send Help">Send Help</div>
+                    <div class="card-meta">2026 • 113 min</div>
+                    <div style="margin-bottom:8px;"><span class="rating-badge mid">⭐ 7.2</span></div>
+                    <div class="card-actions">
+                        <button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/Send Help 2026 1080p WEB-DL HEVC x265 5.1 BONE.mkv')" title="Play in Browser">▶</button>
+                        <a class="imdb-link" href="https://www.imdb.com/title/tt8036976/" target="_blank">IMDb ↗</a>
+                    </div>
+                </div>
+            </div>
+            <div class="card-item" data-type="movie" data-rating="7.2" data-title="Ant-Man" data-year="2015" data-search="ant-man action, comedy, sci-fi peyton reed paul rudd, michael douglas, corey stoll">
+                <img class="card-poster" src="https://m.media-amazon.com/images/M/MV5BMjM2NTQ5Mzc2M15BMl5BanBnXkFtZTgwNTcxMDI2NTE@._V1_SX300.jpg" alt="" loading="lazy">
+                <div class="card-content">
+                    <div class="card-title" title="Ant-Man">Ant-Man</div>
+                    <div class="card-meta">2015 • 117 min</div>
+                    <div style="margin-bottom:8px;"><span class="rating-badge mid">⭐ 7.2</span></div>
+                    <div class="card-actions">
+                        <button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/Ant-Man.2015.720p.BluRay.Dual.Audio.Hindi.640kbps.Eng-KartiKing.mkv')" title="Play in Browser">▶</button>
+                        <a class="imdb-link" href="https://www.imdb.com/title/tt0478970/" target="_blank">IMDb ↗</a>
+                    </div>
+                </div>
+            </div>
+            <div class="card-item" data-type="movie" data-rating="7.1" data-title="American Made" data-year="2017" data-search="american made action, comedy, crime doug liman tom cruise, domhnall gleeson, sarah wright">
+                <img class="card-poster" src="https://m.media-amazon.com/images/M/MV5BMTUxNzUwMjk1Nl5BMl5BanBnXkFtZTgwNDkwODI1MjI@._V1_SX300.jpg" alt="" loading="lazy">
+                <div class="card-content">
+                    <div class="card-title" title="American Made">American Made</div>
+                    <div class="card-meta">2017 • 115 min</div>
+                    <div style="margin-bottom:8px;"><span class="rating-badge mid">⭐ 7.1</span></div>
+                    <div class="card-actions">
+                        <button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/American Made 2017 Hindi Dual Audio www.downloadhub.mobi 720p BluRay ESubs.mkv')" title="Play in Browser">▶</button>
+                        <a class="imdb-link" href="https://www.imdb.com/title/tt3532216/" target="_blank">IMDb ↗</a>
+                    </div>
+                </div>
+            </div>
+            <div class="card-item" data-type="movie" data-rating="7.0" data-title="Aaja Mexico Challiye" data-year="2022" data-search="aaja mexico challiye drama, thriller rakesh dhawan ammy virk, nasir chinyoti, yasaman mohsani">
+                <img class="card-poster" src="https://m.media-amazon.com/images/M/MV5BYTllOTk4MjctMGY4OS00YTE5LTg0MzItZWRjNzdkNTQwYWIzXkEyXkFqcGdeQXVyMTM1NjAwNTI2._V1_SX300.jpg" alt="" loading="lazy">
+                <div class="card-content">
+                    <div class="card-title" title="Aaja Mexico Challiye">Aaja Mexico Challiye</div>
+                    <div class="card-meta">2022 • 125 min</div>
+                    <div style="margin-bottom:8px;"><span class="rating-badge mid">⭐ 7.0</span></div>
+                    <div class="card-actions">
+                        <button class="play-btn" onclick="openModal('file:///G:/Movies/Punjabi/Aaja.Mexico.Challiye.2022.720p.Web.DL.PUN.2.0.ESub.x264.mkv')" title="Play in Browser">▶</button>
+                        <a class="imdb-link" href="https://www.imdb.com/title/tt15554410/" target="_blank">IMDb ↗</a>
+                    </div>
+                </div>
+            </div>
+            <div class="card-item" data-type="movie" data-rating="7.0" data-title="The Bad Guys 2" data-year="2025" data-search="the bad guys 2 animation, action, adventure jp sans, pierre perifel sam rockwell, marc maron, awkwafina">
+                <img class="card-poster" src="https://m.media-amazon.com/images/M/MV5BY2YwODhmODctMjE2OS00Y2EyLWEyZTEtOGU3ODk5MGIzYmU1XkEyXkFqcGc@._V1_SX300.jpg" alt="" loading="lazy">
+                <div class="card-content">
+                    <div class="card-title" title="The Bad Guys 2">The Bad Guys 2</div>
+                    <div class="card-meta">2025 • 104 min</div>
+                    <div style="margin-bottom:8px;"><span class="rating-badge mid">⭐ 7.0</span></div>
+                    <div class="card-actions">
+                        <button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/The.Bad.Guys.2.2025.1080p.MA.WEBRip.DDP5.1.x265-NeoNoir.mkv')" title="Play in Browser">▶</button>
+                        <a class="imdb-link" href="https://www.imdb.com/title/tt30017619/" target="_blank">IMDb ↗</a>
+                    </div>
+                </div>
+            </div>
+            <div class="card-item" data-type="movie" data-rating="7.0" data-title="Ant-Man and the Wasp" data-year="2018" data-search="ant-man and the wasp action, adventure, comedy peyton reed paul rudd, evangeline lilly, michael peña">
+                <img class="card-poster" src="https://m.media-amazon.com/images/M/MV5BODVkY2ZmZTAtYzFhMi00YzZlLWE2YWMtMDBiYjY2OTU4ZWM0XkEyXkFqcGc@._V1_SX300.jpg" alt="" loading="lazy">
+                <div class="card-content">
+                    <div class="card-title" title="Ant-Man and the Wasp">Ant-Man and the Wasp</div>
+                    <div class="card-meta">2018 • 118 min</div>
+                    <div style="margin-bottom:8px;"><span class="rating-badge mid">⭐ 7.0</span></div>
+                    <div class="card-actions">
+                        <button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/Ant-Man.and.the.Wasp.2018.720p.BluRay.Dual.Audio.Hindi.640kbps.Eng-KartiKing.mkv')" title="Play in Browser">▶</button>
+                        <a class="imdb-link" href="https://www.imdb.com/title/tt5095030/" target="_blank">IMDb ↗</a>
+                    </div>
+                </div>
+            </div>
+            <div class="card-item" data-type="movie" data-rating="7.0" data-title="Arthur the King" data-year="2024" data-search="arthur the king adventure, drama, sport simon cellan jones mark wahlberg, simu liu, juliet rylance">
+                <img class="card-poster" src="https://m.media-amazon.com/images/M/MV5BNDIyN2JjOTQtYTY3MS00OTQwLWJmNjAtYzVmNTU1MWNjNzYyXkEyXkFqcGc@._V1_SX300.jpg" alt="" loading="lazy">
+                <div class="card-content">
+                    <div class="card-title" title="Arthur the King">Arthur the King</div>
+                    <div class="card-meta">2024 • 107 min</div>
+                    <div style="margin-bottom:8px;"><span class="rating-badge mid">⭐ 7.0</span></div>
+                    <div class="card-actions">
+                        <button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/Arthur.the.King.2024.1080p.AMZN.WEBRip.1400MB.DD5.1.x264-GalaxyRG.mkv')" title="Play in Browser">▶</button>
+                        <a class="imdb-link" href="https://www.imdb.com/title/tt10720352/" target="_blank">IMDb ↗</a>
+                    </div>
+                </div>
+            </div>
+            <div class="card-item" data-type="movie" data-rating="6.8" data-title="The Fantastic Four: First Steps" data-year="2025" data-search="the fantastic four: first steps action, adventure, sci-fi matt shakman pedro pascal, vanessa kirby, ebon moss-bachrach">
+                <img class="card-poster" src="https://m.media-amazon.com/images/M/MV5BOGM5MzA3MDAtYmEwMi00ZDNiLTg4MDgtMTZjOTc0ZGMyNTIwXkEyXkFqcGc@._V1_SX300.jpg" alt="" loading="lazy">
+                <div class="card-content">
+                    <div class="card-title" title="The Fantastic Four: First Steps">The Fantastic Four: First Steps</div>
+                    <div class="card-meta">2025 • 115 min</div>
+                    <div style="margin-bottom:8px;"><span class="rating-badge mid">⭐ 6.8</span></div>
+                    <div class="card-actions">
+                        <button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/The.Fantastic.Four.First.Steps.2025.1080p.WEBRip.10Bit.DDP5.1.x265-NeoNoir.mkv')" title="Play in Browser">▶</button>
+                        <a class="imdb-link" href="https://www.imdb.com/title/tt10676052/" target="_blank">IMDb ↗</a>
+                    </div>
+                </div>
+            </div>
+            <div class="card-item" data-type="movie" data-rating="6.8" data-title="Aquaman" data-year="2018" data-search="aquaman action, adventure, fantasy james wan jason momoa, amber heard, willem dafoe">
+                <img class="card-poster" src="https://m.media-amazon.com/images/M/MV5BOTk5ODg0OTU5M15BMl5BanBnXkFtZTgwMDQ3MDY3NjM@._V1_SX300.jpg" alt="" loading="lazy">
+                <div class="card-content">
+                    <div class="card-title" title="Aquaman">Aquaman</div>
+                    <div class="card-meta">2018 • 143 min</div>
+                    <div style="margin-bottom:8px;"><span class="rating-badge mid">⭐ 6.8</span></div>
+                    <div class="card-actions">
+                        <button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/Aquaman 2018 IMAX x264 720p Esub BluRay Dual Audio English Hindi GOPI SAHI.mkv')" title="Play in Browser">▶</button>
+                        <a class="imdb-link" href="https://www.imdb.com/title/tt1477834/" target="_blank">IMDb ↗</a>
+                    </div>
+                </div>
+            </div>
+            <div class="card-item" data-type="movie" data-rating="6.7" data-title="Hardcore Henry" data-year="2015" data-search="hardcore henry action, adventure, sci-fi ilya naishuller sharlto copley, tim roth, haley bennett">
+                <img class="card-poster" src="https://m.media-amazon.com/images/M/MV5BNjIzNTcwMDc3Nl5BMl5BanBnXkFtZTgwNzU5NTY5NzE@._V1_SX300.jpg" alt="" loading="lazy">
+                <div class="card-content">
+                    <div class="card-title" title="Hardcore Henry">Hardcore Henry</div>
+                    <div class="card-meta">2015 • 96 min</div>
+                    <div style="margin-bottom:8px;"><span class="rating-badge mid">⭐ 6.7</span></div>
+                    <div class="card-actions">
+                        <button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/Hardcore.Henry.2015.720p.BluRay.x264-[YTS.AG].mp4')" title="Play in Browser">▶</button>
+                        <a class="imdb-link" href="https://www.imdb.com/title/tt3072482/" target="_blank">IMDb ↗</a>
+                    </div>
+                </div>
+            </div>
+            <div class="card-item" data-type="movie" data-rating="6.4" data-title="The Running Man" data-year="2025" data-search="the running man action, adventure, sci-fi edgar wright glen powell, alyssa benn, sienna benn">
+                <img class="card-poster" src="https://m.media-amazon.com/images/M/MV5BMTk5NjU4OTAtNTEyMS00ZjBiLTg0ZjMtOGJiMGJhNjQ3MzYxXkEyXkFqcGc@._V1_SX300.jpg" alt="" loading="lazy">
+                <div class="card-content">
+                    <div class="card-title" title="The Running Man">The Running Man</div>
+                    <div class="card-meta">2025 • 133 min</div>
+                    <div style="margin-bottom:8px;"><span class="rating-badge mid">⭐ 6.4</span></div>
+                    <div class="card-actions">
+                        <button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/The.Running.Man.2025.1080p.WEBRip.10Bit.DDP5.1.x265-NeoNoir.mkv')" title="Play in Browser">▶</button>
+                        <a class="imdb-link" href="https://www.imdb.com/title/tt14107334/" target="_blank">IMDb ↗</a>
+                    </div>
+                </div>
+            </div>
+            <div class="card-item" data-type="movie" data-rating="6.4" data-title="Alien: Covenant" data-year="2017" data-search="alien: covenant horror, sci-fi, thriller ridley scott michael fassbender, katherine waterston, billy crudup">
+                <img class="card-poster" src="https://m.media-amazon.com/images/M/MV5BMjhiYWQ4MTAtOGY1Zi00ZjcyLTk1ZDYtODI3ODRhNjE4MzZhXkEyXkFqcGc@._V1_SX300.jpg" alt="" loading="lazy">
+                <div class="card-content">
+                    <div class="card-title" title="Alien: Covenant">Alien: Covenant</div>
+                    <div class="card-meta">2017 • 122 min</div>
+                    <div style="margin-bottom:8px;"><span class="rating-badge mid">⭐ 6.4</span></div>
+                    <div class="card-actions">
+                        <button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/Alien Covenant (2017)[720p - BDRip - Original [Tamil + Telugu + Hindi + Eng].mkv')" title="Play in Browser">▶</button>
+                        <a class="imdb-link" href="https://www.imdb.com/title/tt2316204/" target="_blank">IMDb ↗</a>
+                    </div>
+                </div>
+            </div>
+            <div class="card-item" data-type="movie" data-rating="6.3" data-title="Zathura: A Space Adventure" data-year="2005" data-search="zathura: a space adventure action, adventure, comedy jon favreau josh hutcherson, jonah bobo, dax shepard">
+                <img class="card-poster" src="https://m.media-amazon.com/images/M/MV5BNDMzZDZhMTQtYzJkNi00OTI2LThjNDUtN2I2N2JjZmYwMWM5XkEyXkFqcGc@._V1_SX300.jpg" alt="" loading="lazy">
+                <div class="card-content">
+                    <div class="card-title" title="Zathura: A Space Adventure">Zathura: A Space Adventure</div>
+                    <div class="card-meta">2005 • 101 min</div>
+                    <div style="margin-bottom:8px;"><span class="rating-badge mid">⭐ 6.3</span></div>
+                    <div class="card-actions">
+                        <button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/Zathura A Space Adventure 2005 x264 720p Esub BluRay Dual Audio English Hindi GOPI SAHI.mkv')" title="Play in Browser">▶</button>
+                        <a class="imdb-link" href="https://www.imdb.com/title/tt0406375/" target="_blank">IMDb ↗</a>
+                    </div>
+                </div>
+            </div>
+            <div class="card-item" data-type="movie" data-rating="6.2" data-title="Mercy" data-year="2026" data-search="mercy action, crime, drama timur bekmambetov chris pratt, rebecca ferguson, kali reis">
+                <img class="card-poster" src="https://m.media-amazon.com/images/M/MV5BMWJmYjcwMTMtMDU1ZC00ZGI5LTlmZDAtODI3NDA2ZTE5ZGVlXkEyXkFqcGc@._V1_SX300.jpg" alt="" loading="lazy">
+                <div class="card-content">
+                    <div class="card-title" title="Mercy">Mercy</div>
+                    <div class="card-meta">2026 • 99 min</div>
+                    <div style="margin-bottom:8px;"><span class="rating-badge mid">⭐ 6.2</span></div>
+                    <div class="card-actions">
+                        <button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/Mercy.2026.1080p.WEBRip.AAC5.1.10bits.x265-Rapta.mkv')" title="Play in Browser">▶</button>
+                        <a class="imdb-link" href="https://www.imdb.com/title/tt31050594/" target="_blank">IMDb ↗</a>
+                    </div>
+                </div>
+            </div>
+            <div class="card-item" data-type="movie" data-rating="6.2" data-title="Tron: Ares" data-year="2025" data-search="tron: ares action, adventure, sci-fi joachim rønning jared leto, greta lee, jeff bridges">
+                <img class="card-poster" src="https://m.media-amazon.com/images/M/MV5BYzNlY2RiYWEtMDA0YS00MTZkLWI5YmUtMDNiZDZlN2E4MTVlXkEyXkFqcGc@._V1_SX300.jpg" alt="" loading="lazy">
+                <div class="card-content">
+                    <div class="card-title" title="Tron: Ares">Tron: Ares</div>
+                    <div class="card-meta">2025 • 119 min</div>
+                    <div style="margin-bottom:8px;"><span class="rating-badge mid">⭐ 6.2</span></div>
+                    <div class="card-actions">
+                        <button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/Tron.Ares.2025.IMAX.1080p.10bit.DS4K.DSNP.WEBRip.[Org.DDP5.1-Hindi_DDPA5.1-English].ESub.HEVC-The.PunisheR.mkv')" title="Play in Browser">▶</button>
+                        <a class="imdb-link" href="https://www.imdb.com/title/tt6604188/" target="_blank">IMDb ↗</a>
+                    </div>
+                </div>
+            </div>
+            <div class="card-item" data-type="series" data-rating="6.2" data-title="Ms. Marvel" data-year="2022" data-search="ms. marvel action, adventure, comedy n/a iman vellani, matt lintz, zenobia shroff">
+                <img class="card-poster" src="https://m.media-amazon.com/images/M/MV5BNzlkNjBmOWUtOTgzZS00OWIzLThkNWEtZTg5MGY2ODAyYzZjXkEyXkFqcGc@._V1_SX300.jpg" alt="" loading="lazy">
+                <div class="card-content">
+                    <div class="card-title" title="Ms. Marvel">Ms. Marvel</div>
+                    <div class="card-meta">2022 • N/A</div>
+                    <div style="margin-bottom:8px;"><span class="rating-badge mid">⭐ 6.2</span></div>
+                    <div class="card-actions">
+                        <button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/Ms.Marvel.S01E02.720p.WEB.x265-MiNX.mkv')" title="Play in Browser">▶</button>
+                        <a class="imdb-link" href="https://www.imdb.com/title/tt10857164/" target="_blank">IMDb ↗</a>
+                    </div>
+                </div>
+            </div>
+            <div class="card-item" data-type="movie" data-rating="6.0" data-title="Coolie" data-year="2025" data-search="coolie action, crime, thriller lokesh kanagaraj rajinikanth, aamir khan, nagarjuna akkineni">
+                <img class="card-poster" src="https://m.media-amazon.com/images/M/MV5BOTYwYzYxMWYtZmI4MS00ZGRhLWEyMGEtZTdiODc3YjAyNDE0XkEyXkFqcGc@._V1_SX300.jpg" alt="" loading="lazy">
+                <div class="card-content">
+                    <div class="card-title" title="Coolie">Coolie</div>
+                    <div class="card-meta">2025 • 168 min</div>
+                    <div style="margin-bottom:8px;"><span class="rating-badge mid">⭐ 6.0</span></div>
+                    <div class="card-actions">
+                        <button class="play-btn" onclick="openModal('file:///G:/Movies/South Indian Movies/Coolie.2025.1080p.10bit.DS4K.AMZN.WEBRip.Hindi-Tamil.DDP5.1.x265.HEVC-Ospreay.mkv')" title="Play in Browser">▶</button>
+                        <a class="imdb-link" href="https://www.imdb.com/title/tt27441481/" target="_blank">IMDb ↗</a>
+                    </div>
+                </div>
+            </div>
+            <div class="card-item" data-type="movie" data-rating="5.6" data-title="Atlas" data-year="2024" data-search="atlas action, adventure, drama brad peyton jennifer lopez, simu liu, sterling k. brown">
+                <img class="card-poster" src="https://m.media-amazon.com/images/M/MV5BNDUwNTFkNzYtMGM5NS00NTc4LWEwMDUtMmE5MzgyMjcwOWM4XkEyXkFqcGc@._V1_SX300.jpg" alt="" loading="lazy">
+                <div class="card-content">
+                    <div class="card-title" title="Atlas">Atlas</div>
+                    <div class="card-meta">2024 • 118 min</div>
+                    <div style="margin-bottom:8px;"><span class="rating-badge mid">⭐ 5.6</span></div>
+                    <div class="card-actions">
+                        <button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/Atlas.2024.WebRip.720p.x264.[Hindi.Tamil.Telugu.English].AAC.ESub.mkv')" title="Play in Browser">▶</button>
+                        <a class="imdb-link" href="https://www.imdb.com/title/tt14856980/" target="_blank">IMDb ↗</a>
+                    </div>
+                </div>
+            </div>
+            <div class="card-item" data-type="movie" data-rating="5.5" data-title="Annabelle" data-year="2014" data-search="annabelle horror, mystery, thriller john r. leonetti ward horton, annabelle wallis, alfre woodard">
+                <img class="card-poster" src="https://m.media-amazon.com/images/M/MV5BNjkyMDU5ZWQtZDhkOC00ZWFjLWIyM2MtZWFhMDUzNjdlNzU2XkEyXkFqcGc@._V1_SX300.jpg" alt="" loading="lazy">
+                <div class="card-content">
+                    <div class="card-title" title="Annabelle">Annabelle</div>
+                    <div class="card-meta">2014 • 99 min</div>
+                    <div style="margin-bottom:8px;"><span class="rating-badge mid">⭐ 5.5</span></div>
+                    <div class="card-actions">
+                        <button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/Annabelle 2014 720p BluRay x264 Hindi English DD 5.1 - LOKI - M2Tv.mkv')" title="Play in Browser">▶</button>
+                        <a class="imdb-link" href="https://www.imdb.com/title/tt3322940/" target="_blank">IMDb ↗</a>
+                    </div>
+                </div>
+            </div>
+            <div class="card-item" data-type="movie" data-rating="5.4" data-title="Watchman" data-year="2019" data-search="watchman thriller a.l. vijay g.v. prakash kumar, samyuktha hegde, suman">
+                <img class="card-poster" src="https://m.media-amazon.com/images/M/MV5BMDgwZDczY2UtZjYyMC00ZTBiLWI2NDYtOTFkYWY3Mjc4ZTQ2XkEyXkFqcGdeQXVyMTEzNzg0Mjkx._V1_SX300.jpg" alt="" loading="lazy">
+                <div class="card-content">
+                    <div class="card-title" title="Watchman">Watchman</div>
+                    <div class="card-meta">2019 • 95 min</div>
+                    <div style="margin-bottom:8px;"><span class="rating-badge low">⭐ 5.4</span></div>
+                    <div class="card-actions">
+                        <button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/WatchMan.mkv')" title="Play in Browser">▶</button>
+                        <a class="imdb-link" href="https://www.imdb.com/title/tt9378320/" target="_blank">IMDb ↗</a>
+                    </div>
+                </div>
+            </div>
+            <div class="card-item" data-type="movie" data-rating="5.2" data-title="Moonfall" data-year="2022" data-search="moonfall action, adventure, sci-fi roland emmerich halle berry, patrick wilson, john bradley">
+                <img class="card-poster" src="https://m.media-amazon.com/images/M/MV5BOWY0YzViYzgtMzM5YS00YzI1LTk5MTQtZjdiZjUyZjQ5ZGMwXkEyXkFqcGc@._V1_SX300.jpg" alt="" loading="lazy">
+                <div class="card-content">
+                    <div class="card-title" title="Moonfall">Moonfall</div>
+                    <div class="card-meta">2022 • 130 min</div>
+                    <div style="margin-bottom:8px;"><span class="rating-badge low">⭐ 5.2</span></div>
+                    <div class="card-actions">
+                        <button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/Moonfall (2022) (1080p DS4K Bluray SDR x265 HEVC 10bit Hindi _ English) [ZiroMB].mkv')" title="Play in Browser">▶</button>
+                        <a class="imdb-link" href="https://www.imdb.com/title/tt5834426/" target="_blank">IMDb ↗</a>
+                    </div>
+                </div>
+            </div>
+            <div class="card-item" data-type="series" data-rating="5.2" data-title="She-Hulk: Attorney at Law" data-year="2022" data-search="she-hulk: attorney at law action, adventure, comedy n/a tatiana maslany, ginger gonzaga, malia arrayah">
+                <img class="card-poster" src="https://m.media-amazon.com/images/M/MV5BNjg4ZTQ1MjctNzEyMS00YWM2LTk1ZTQtNDU3ZDJjNjhhMDhkXkEyXkFqcGc@._V1_SX300.jpg" alt="" loading="lazy">
+                <div class="card-content">
+                    <div class="card-title" title="She-Hulk: Attorney at Law">She-Hulk: Attorney at Law</div>
+                    <div class="card-meta">2022 • N/A</div>
+                    <div style="margin-bottom:8px;"><span class="rating-badge low">⭐ 5.2</span></div>
+                    <div class="card-actions">
+                        <button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/She-Hulk.Attorney.at.Law.S01E01.WEB.x264-TORRENTGALAXY (1).mkv')" title="Play in Browser">▶</button>
+                        <a class="imdb-link" href="https://www.imdb.com/title/tt10857160/" target="_blank">IMDb ↗</a>
+                    </div>
+                </div>
+            </div>
+            <div class="card-item" data-type="movie" data-rating="4.7" data-title="Borderlands" data-year="2024" data-search="borderlands action, adventure, comedy eli roth cate blanchett, kevin hart, edgar ramírez">
+                <img class="card-poster" src="https://m.media-amazon.com/images/M/MV5BMDhkMzQzZmQtOGQ1NS00Y2FhLTkzYjAtNWE1MmRiOWM1MjUzXkEyXkFqcGc@._V1_SX300.jpg" alt="" loading="lazy">
+                <div class="card-content">
+                    <div class="card-title" title="Borderlands">Borderlands</div>
+                    <div class="card-meta">2024 • 101 min</div>
+                    <div style="margin-bottom:8px;"><span class="rating-badge low">⭐ 4.7</span></div>
+                    <div class="card-actions">
+                        <button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/Borderlands.2024.720p.WEBRip.800MB.x264-GalaxyRG.mkv')" title="Play in Browser">▶</button>
+                        <a class="imdb-link" href="https://www.imdb.com/title/tt4978420/" target="_blank">IMDb ↗</a>
+                    </div>
+                </div>
+            </div>
+            <div class="card-item" data-type="movie" data-rating="4.3" data-title="Fantastic Four" data-year="2015" data-search="fantastic four action, adventure, sci-fi josh trank miles teller, kate mara, michael b. jordan">
+                <img class="card-poster" src="https://m.media-amazon.com/images/M/MV5BMTk0OTMyMDA0OF5BMl5BanBnXkFtZTgwMzY5NTkzNTE@._V1_SX300.jpg" alt="" loading="lazy">
+                <div class="card-content">
+                    <div class="card-title" title="Fantastic Four">Fantastic Four</div>
+                    <div class="card-meta">2015 • 100 min</div>
+                    <div style="margin-bottom:8px;"><span class="rating-badge low">⭐ 4.3</span></div>
+                    <div class="card-actions">
+                        <button class="play-btn" onclick="openModal('file:///G:/Movies/Hollywood/Fantastic Four 2015 www.khatrimaza.org Dual Audio BRRip 480p.MKV')" title="Play in Browser">▶</button>
+                        <a class="imdb-link" href="https://www.imdb.com/title/tt1502712/" target="_blank">IMDb ↗</a>
+                    </div>
+                </div>
+            </div>
+            <div class="card-item" data-type="movie" data-rating="0" data-title="Kishkindhapuri" data-year="2025" data-search="kishkindhapuri horror koushik pegallapati anupama parameswaran, sai srinivas bellamkonda, makrand deshpande">
+                <img class="card-poster" src="https://m.media-amazon.com/images/M/MV5BYmVlYjhhNzAtZDczYy00Mzk2LWIzMTUtYTI2MDA4ZmVhZjg3XkEyXkFqcGc@._V1_SX300.jpg" alt="" loading="lazy">
+                <div class="card-content">
+                    <div class="card-title" title="Kishkindhapuri">Kishkindhapuri</div>
+                    <div class="card-meta">2025 • N/A</div>
+                    <div style="margin-bottom:8px;"><span class="rating-badge low">⭐ N/A</span></div>
+                    <div class="card-actions">
+                        <button class="play-btn" onclick="openModal('file:///G:/Movies/South Indian Movies/Kishkindhapuri (2025) 720p WEBRip x265 AAC [ Hin, Mal ] ESub.mkv')" title="Play in Browser">▶</button>
+                        <a class="imdb-link" href="https://www.imdb.com/title/tt32175880/" target="_blank">IMDb ↗</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="not-found-section">
+            <h2>⚠️ Not Found on IMDb (25 files)</h2>
+            <ul class="not-found-list">
+                <li><span>777.Charlie.(2022).Hindi.1080p.WEBRip.10bit.DDP.5.1.HEVC-[Musafirboy].mkv</span><span style="color:var(--text-muted)">Searched: "777 Charlie DDP 5 1"</span></li>
+                <li><span>Aavesham (2024) 720p 10bit DS4K AMZN WEBRip x265 HEVC [ Hindi HS DDP 5.1 - Malayalam AAC 5.1 ] ESub ~ TheAvi ~ LSSJBroly.mkv</span><span style="color:var(--text-muted)">Searched: "Aavesham DS4K ~ TheAvi ~ LSSJBroly"</span></li>
+                <li><span>Asuran (2019) 720p WEBRip x264 AAC Multi [Hin,Tam,Mal] Esub.mkv</span><span style="color:var(--text-muted)">Searched: "Asuran Multi"</span></li>
+                <li><span>Bahubali 2.mkv</span><span style="color:var(--text-muted)">Searched: "Bahubali 2"</span></li>
+                <li><span>Bakasura Restaurant (2025) 720p 10bit AMZN WEBRip x265 HEVC [Hindi DDP 5.1 _ Telugu DDP 5.1] ESub - Immortal.mkv</span><span style="color:var(--text-muted)">Searched: "Bakasura Restaurant - Immortal"</span></li>
+                <li><span>Brat (2025) 720p 10bit AMZN WEBRip x265 HEVC [Hindi DDP 2.0 _ Kannada DDP 2.0] ESub - Immortal.mkv</span><span style="color:var(--text-muted)">Searched: "Brat - Immortal"</span></li>
+                <li><span>Batman.Ninja.vs.Yakuza.League.1080p.WEB-DL.AAC5.1.x265-NeoNoir.mkv</span><span style="color:var(--text-muted)">Searched: "Batman Ninja vs Yakuza League AAC5 1 -NeoNoir"</span></li>
+                <li><span>9.2 12th.Fail.2023.1080p.WEB-DL.DDP5.1.HDR.H265-REL1VIN.mkv</span><span style="color:var(--text-muted)">Searched: "9 2 12th Fail"</span></li>
+                <li><span>Chandni Chowk To China (2009) 720p 10bit AMZN WEBRip x265 HEVC Hindi AAC 5.1 ESub ~ Immortal.mkv</span><span style="color:var(--text-muted)">Searched: "Chandni Chowk To China 5 1 ~ Immortal"</span></li>
+                <li><span>5.8 Maalik (2025) 720p 10bit DS4K AMZN WEBRip x265 HEVC Hindi DDP 5.1 ESub - Immortal.mkv</span><span style="color:var(--text-muted)">Searched: "5 8 Maalik DS4K DDP 5 1 - Immortal"</span></li>
+                <li><span>Veerana (1988) Full Hindi Movie - Hemant Birje, Sahila Chadha, Kulbhushan Kharbanda_reencoded.mp4</span><span style="color:var(--text-muted)">Searched: "Veerana Full Movie - Hemant Birje, Sahila Chadha, Kulbhushan Kharbanda reencoded"</span></li>
+                <li><span>8.2 Andhadhun.2018.720p.BluRay.x264-[YTS.AM].mp4</span><span style="color:var(--text-muted)">Searched: "8 2 Andhadhun"</span></li>
+                <li><span>Babylon (2022) 720p 10bit BluRay x265 HEVC [Hindi AAC 5.1  English AAC 5.1] ESub ~ Immortal.mkv</span><span style="color:var(--text-muted)">Searched: "Babylon ~ Immortal"</span></li>
+                <li><span>Five Nights at Freddys 2 (2025) Eng 1080p WEBRip x265 DDP 5.1 ESub (1).mkv</span><span style="color:var(--text-muted)">Searched: "Five Nights at Freddys 2 DDP 5 1"</span></li>
+                <li><span>Don_t Look Up (2021) 720p 10bit NF WEBRip x265 HEVC [Hindi AAC 5.1 _ English AAC 5.1] ESub ~ Immortal.mkv</span><span style="color:var(--text-muted)">Searched: "Don t Look Up ~ Immortal"</span></li>
+                <li><span>Avengers.480P[Dual Audio][Eng(5.1)+Hindi(5.1)~JamMafia.mkv</span><span style="color:var(--text-muted)">Searched: "Avengers [ + ~JamMafia"</span></li>
+                <li><span>Batman.and.Superman.Battle.of.the.Super.Sons.2022.BRRip.XviD.AC3-EVO.avi</span><span style="color:var(--text-muted)">Searched: "Batman and Superman Battle of the Super Sons"</span></li>
+                <li><span>Battleship (2012) 720p BRRip x264[Dual-Audio][English-Hindi 6ch] By M@fiaking [Team EXD ExClusive].mkv</span><span style="color:var(--text-muted)">Searched: "Battleship By M@fiaking"</span></li>
+                <li><span>Iron.Man.2.Dual.300MB.WorldFree4u.Com.mkv</span><span style="color:var(--text-muted)">Searched: "Iron Man 2 Dual WorldFree4u Com"</span></li>
+                <li><span>Resident_Evil_by_-Filmywap.mp4</span><span style="color:var(--text-muted)">Searched: "Resident Evil by -Filmywap"</span></li>
+                <li><span>1. Man of Steel (2013) 720p BluRay Hindi (448kbps) Eng KartiKing.mkv</span><span style="color:var(--text-muted)">Searched: "1 Man of Steel KartiKing"</span></li>
+                <li><span>2. Batman v Superman Dawn of Justice (2016) Extended 720p Hindi (448kbps) Eng KartiKing.mkv</span><span style="color:var(--text-muted)">Searched: "2 Batman v Superman Dawn of Justice KartiKing"</span></li>
+                <li><span>4. Wonder Woman (2017) 720p English BluRay Hindi PGS SUBS KartiKing.mkv</span><span style="color:var(--text-muted)">Searched: "4 Wonder Woman PGS SUBS KartiKing"</span></li>
+                <li><span>5. Justice League (2017) 720p BluRay Hindi (448kbps) Eng KartiKing.mkv</span><span style="color:var(--text-muted)">Searched: "5 Justice League KartiKing"</span></li>
+                <li><span>2012 2009 x264 720p Esub BluRay 6.0 Dual Audio English Hindi GOPISAHI.mkv</span><span style="color:var(--text-muted)">Searched: ""</span></li>
+            </ul>
+        </div>
+
+        <div class="section-title">🏆 Top 10 Highest Rated</div>
+        <div class="stats-grid" style="grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); margin-bottom: 48px;">
+            <div class="stat-card" style="text-align:left;padding:0;overflow:hidden;">
+                <div style="height:6px; background: var(--gradient-gold);"></div>
+                <div style="padding:18px;">
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+                        <div>
+                            <div style="font-weight:700;font-size:15px;">Se7en</div>
+                            <div style="font-size:12px;color:var(--text-secondary);">1995 • Movie</div>
+                        </div>
+                        <span class="rating-badge high">⭐ 8.6</span>
+                    </div>
+                    <div style="font-size:12px;color:var(--text-muted);">Crime, Drama, Mystery</div>
+                </div>
+            </div>
+            <div class="stat-card" style="text-align:left;padding:0;overflow:hidden;">
+                <div style="height:6px; background: var(--gradient-gold);"></div>
+                <div style="padding:18px;">
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+                        <div>
+                            <div style="font-weight:700;font-size:15px;">Parasite</div>
+                            <div style="font-size:12px;color:var(--text-secondary);">2019 • Movie</div>
+                        </div>
+                        <span class="rating-badge high">⭐ 8.5</span>
+                    </div>
+                    <div style="font-size:12px;color:var(--text-muted);">Drama, Thriller</div>
+                </div>
+            </div>
+            <div class="stat-card" style="text-align:left;padding:0;overflow:hidden;">
+                <div style="height:6px; background: var(--gradient-gold);"></div>
+                <div style="padding:18px;">
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+                        <div>
+                            <div style="font-weight:700;font-size:15px;">Inglourious Basterds</div>
+                            <div style="font-size:12px;color:var(--text-secondary);">2009 • Movie</div>
+                        </div>
+                        <span class="rating-badge high">⭐ 8.4</span>
+                    </div>
+                    <div style="font-size:12px;color:var(--text-muted);">Adventure, Drama, War</div>
+                </div>
+            </div>
+            <div class="stat-card" style="text-align:left;padding:0;overflow:hidden;">
+                <div style="height:6px; background: var(--gradient-gold);"></div>
+                <div style="padding:18px;">
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+                        <div>
+                            <div style="font-weight:700;font-size:15px;">Avengers: Endgame</div>
+                            <div style="font-size:12px;color:var(--text-secondary);">2019 • Movie</div>
+                        </div>
+                        <span class="rating-badge high">⭐ 8.4</span>
+                    </div>
+                    <div style="font-size:12px;color:var(--text-muted);">Action, Adventure, Sci-Fi</div>
+                </div>
+            </div>
+            <div class="stat-card" style="text-align:left;padding:0;overflow:hidden;">
+                <div style="height:6px; background: var(--gradient-gold);"></div>
+                <div style="padding:18px;">
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+                        <div>
+                            <div style="font-weight:700;font-size:15px;">Avengers: Infinity War</div>
+                            <div style="font-size:12px;color:var(--text-secondary);">2018 • Movie</div>
+                        </div>
+                        <span class="rating-badge high">⭐ 8.4</span>
+                    </div>
+                    <div style="font-size:12px;color:var(--text-muted);">Action, Adventure, Sci-Fi</div>
+                </div>
+            </div>
+            <div class="stat-card" style="text-align:left;padding:0;overflow:hidden;">
+                <div style="height:6px; background: var(--gradient-gold);"></div>
+                <div style="padding:18px;">
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+                        <div>
+                            <div style="font-weight:700;font-size:15px;">House of the Dragon</div>
+                            <div style="font-size:12px;color:var(--text-secondary);">2022– • Series</div>
+                        </div>
+                        <span class="rating-badge high">⭐ 8.3</span>
+                    </div>
+                    <div style="font-size:12px;color:var(--text-muted);">Action, Adventure, Drama</div>
+                </div>
+            </div>
+            <div class="stat-card" style="text-align:left;padding:0;overflow:hidden;">
+                <div style="height:6px; background: var(--gradient-gold);"></div>
+                <div style="padding:18px;">
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+                        <div>
+                            <div style="font-weight:700;font-size:15px;">A Silent Voice: The Movie</div>
+                            <div style="font-size:12px;color:var(--text-secondary);">2016 • Movie</div>
+                        </div>
+                        <span class="rating-badge high">⭐ 8.2</span>
+                    </div>
+                    <div style="font-size:12px;color:var(--text-muted);">Animation, Drama</div>
+                </div>
+            </div>
+            <div class="stat-card" style="text-align:left;padding:0;overflow:hidden;">
+                <div style="height:6px; background: var(--gradient-gold);"></div>
+                <div style="padding:18px;">
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+                        <div>
+                            <div style="font-weight:700;font-size:15px;">Batman Begins</div>
+                            <div style="font-size:12px;color:var(--text-secondary);">2005 • Movie</div>
+                        </div>
+                        <span class="rating-badge high">⭐ 8.2</span>
+                    </div>
+                    <div style="font-size:12px;color:var(--text-muted);">Action, Crime, Drama</div>
+                </div>
+            </div>
+            <div class="stat-card" style="text-align:left;padding:0;overflow:hidden;">
+                <div style="height:6px; background: var(--gradient-gold);"></div>
+                <div style="padding:18px;">
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+                        <div>
+                            <div style="font-weight:700;font-size:15px;">Batman Begins</div>
+                            <div style="font-size:12px;color:var(--text-secondary);">2005 • Movie</div>
+                        </div>
+                        <span class="rating-badge high">⭐ 8.2</span>
+                    </div>
+                    <div style="font-size:12px;color:var(--text-muted);">Action, Crime, Drama</div>
+                </div>
+            </div>
+            <div class="stat-card" style="text-align:left;padding:0;overflow:hidden;">
+                <div style="height:6px; background: var(--gradient-gold);"></div>
+                <div style="padding:18px;">
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+                        <div>
+                            <div style="font-weight:700;font-size:15px;">Catch Me If You Can</div>
+                            <div style="font-size:12px;color:var(--text-secondary);">2002 • Movie</div>
+                        </div>
+                        <span class="rating-badge high">⭐ 8.1</span>
+                    </div>
+                    <div style="font-size:12px;color:var(--text-muted);">Biography, Crime, Drama</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            Generated on April 16, 2026 at 10:18 AM — IMDb Report Generator
+        </div>
+    </div>
+    
+    <!-- Video Modal -->
+    <div id="videoModal">
+        <div id="videoContainer">
+            <span class="close-modal" onclick="closeModal()">&times;</span>
+            <video id="mooviePlayer"></video>
+        </div>
+    </div>
+
+    <script src="moovie.js/js/moovie.js"></script>
+    <script>
+        let currentFilter = 'all';
+        let currentView = 'table';
+        let moovieInstance = null;
+
+        function toggleView(view) {
+            currentView = view;
+            if (view === 'card') {
+                document.querySelector('.table-wrapper').style.display = 'none';
+                document.getElementById('cardsGrid').style.display = 'grid';
+                document.getElementById('btnTableView').classList.remove('active');
+                document.getElementById('btnCardView').classList.add('active');
+            } else {
+                document.querySelector('.table-wrapper').style.display = 'block';
+                document.getElementById('cardsGrid').style.display = 'none';
+                document.getElementById('btnTableView').classList.add('active');
+                document.getElementById('btnCardView').classList.remove('active');
+            }
+        }
+
+        function setFilter(type, btn) {
+            currentFilter = type;
+            document.querySelectorAll('.controls > .filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            filterTable();
+        }
+
+        function filterTable() {
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const rows = document.querySelectorAll('#resultsTable tbody tr');
+            const cards = document.querySelectorAll('#cardsGrid .card-item');
+            let visible = 0;
+            
+            for (let i = 0; i < rows.length; i++) {
+                const row = rows[i];
+                const card = cards[i];
+                
+                const matchType = currentFilter === 'all' || row.dataset.type === currentFilter;
+                const matchSearch = !search || row.dataset.search.includes(search);
+                
+                if (matchType && matchSearch) {
+                    row.style.display = '';
+                    if (card) card.style.display = 'flex';
+                    visible++;
+                } else {
+                    row.style.display = 'none';
+                    if (card) card.style.display = 'none';
+                }
+            }
+            
+            document.getElementById('resultCount').textContent = visible + ' titles';
+        }
+
+        function sortTable() {
+            const sortVal = document.getElementById('sortSelect').value;
+            const tbody = document.querySelector('#resultsTable tbody');
+            const grid = document.getElementById('cardsGrid');
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            const cards = Array.from(grid.querySelectorAll('.card-item'));
+            
+            const pairs = rows.map((row, i) => ({ row, card: cards[i] }));
+            
+            pairs.sort((a, b) => {
+                switch (sortVal) {
+                    case 'rating-desc': return (parseFloat(b.row.dataset.rating) || 0) - (parseFloat(a.row.dataset.rating) || 0);
+                    case 'rating-asc': return (parseFloat(a.row.dataset.rating) || 0) - (parseFloat(b.row.dataset.rating) || 0);
+                    case 'title-asc': return a.row.dataset.title.localeCompare(b.row.dataset.title);
+                    case 'title-desc': return b.row.dataset.title.localeCompare(a.row.dataset.title);
+                    case 'year-desc': return (b.row.dataset.year || '').localeCompare(a.row.dataset.year || '');
+                    case 'year-asc': return (a.row.dataset.year || '').localeCompare(b.row.dataset.year || '');
+                }
+            });
+            
+            pairs.forEach((pair, i) => {
+                if (pair.row.querySelector('.idx-col')) {
+                    pair.row.querySelector('.idx-col').textContent = i + 1;
+                } else {
+                    pair.row.querySelector('td').textContent = i + 1;
+                }
+                tbody.appendChild(pair.row);
+                if (pair.card) grid.appendChild(pair.card);
+            });
+        }
+        
+        function openModal(videoSrc, posterSrc = '') {
+            document.getElementById('videoModal').style.display = 'flex';
+            const player = document.getElementById('mooviePlayer');
+            
+            if (!moovieInstance) {
+                player.src = videoSrc;
+                moovieInstance = new Moovie({
+                    selector: "#mooviePlayer",
+                    dimensions: { width: "100%" },
+                    icons: { path: "moovie.js/icons/" }
+                });
+            } else {
+                moovieInstance.change({
+                    video: {
+                        videoSrc: videoSrc,
+                        posterSrc: posterSrc
+                    }
+                });
+            }
+        }
+        
+        function closeModal() {
+            document.getElementById('videoModal').style.display = 'none';
+            if (moovieInstance && moovieInstance.video) {
+                moovieInstance.video.pause();
+                moovieInstance.change({ video: { videoSrc: '' } });
+            } else {
+                const player = document.getElementById('mooviePlayer');
+                if(player) { player.pause(); player.src = ''; }
+            }
+        }
+    </script>
+</body>
+</html>

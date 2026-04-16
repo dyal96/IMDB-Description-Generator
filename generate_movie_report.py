@@ -264,6 +264,7 @@ def generate_html_report(results, folder_path, output_path):
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>IMDb Report — {os.path.basename(folder_path)}</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="moovie.js/css/moovie.css">
     <style>
         :root {{
             --bg-primary: #0a0a0f;
@@ -719,6 +720,96 @@ def generate_html_report(results, folder_path, output_path):
         .stat-card:nth-child(3) {{ animation-delay: 0.2s; }}
         .stat-card:nth-child(4) {{ animation-delay: 0.3s; }}
         .stat-card:nth-child(5) {{ animation-delay: 0.4s; }}
+
+        /* ─── Card View & Modal ─── */
+        #cardsGrid {{
+            display: none;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 48px;
+        }}
+        .card-item {{
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s ease;
+        }}
+        .card-item:hover {{
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+            border-color: rgba(245,197,24,0.3);
+        }}
+        .card-poster {{
+            width: 100%;
+            height: 380px;
+            background: var(--bg-secondary);
+            object-fit: cover;
+        }}
+        .card-content {{
+            padding: 16px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }}
+        .card-title {{
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 6px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }}
+        .card-meta {{
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+        }}
+        .card-actions {{
+            margin-top: auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }}
+        .play-btn {{
+            background: var(--accent-gold);
+            color: #000;
+            border: none;
+            border-radius: 50%;
+            width: 32px; height: 32px;
+            display: inline-flex; justify-content: center; align-items: center;
+            cursor: pointer;
+            text-decoration: none;
+            transition: transform 0.2s;
+            font-size: 12px;
+        }}
+        .play-btn:hover {{
+            transform: scale(1.1);
+        }}
+        
+        #videoModal {{
+            display: none;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+        }}
+        #videoContainer {{
+            width: 90%; max-width: 1000px;
+            background: #000;
+            box-shadow: 0 0 50px rgba(0,0,0,0.8);
+            position: relative;
+        }}
+        .close-modal {{
+            position: absolute; top: -40px; right: 0;
+            color: #fff; font-size: 30px; cursor: pointer; z-index: 10000;
+        }}
+        
+        .view-btn-group {{ margin-left: auto; display: flex; gap: 8px; }}
     </style>
 </head>
 <body>
@@ -763,6 +854,10 @@ def generate_html_report(results, folder_path, output_path):
             <button class="filter-btn active" onclick="setFilter('all', this)">All</button>
             <button class="filter-btn" onclick="setFilter('movie', this)">🎬 Movies</button>
             <button class="filter-btn" onclick="setFilter('series', this)">📺 Series</button>
+            <div class="view-btn-group">
+                <button class="filter-btn active" id="btnTableView" onclick="toggleView('table')">📋 Table</button>
+                <button class="filter-btn" id="btnCardView" onclick="toggleView('card')">🎴 Cards</button>
+            </div>
             <select class="sort-select" id="sortSelect" onchange="sortTable()">
                 <option value="rating-desc">Sort: Rating ↓</option>
                 <option value="rating-asc">Sort: Rating ↑</option>
@@ -790,19 +885,23 @@ def generate_html_report(results, folder_path, output_path):
                         <th>Genre</th>
                         <th>Director</th>
                         <th>File</th>
+                        <th>Play</th>
                         <th>Link</th>
                     </tr>
                 </thead>
                 <tbody>
 """
+    table_rows_html = ""
+    cards_html = ""
 
     for idx, r in enumerate(sorted(found_results, key=lambda x: _safe_rating(x), reverse=True), 1):
         rating_val = _safe_rating(r)
         rating_class = 'high' if rating_val >= 7.5 else ('mid' if rating_val >= 5.5 else 'low')
 
         poster_html = ''
-        if r.get('poster') and r['poster'] != 'N/A':
-            poster_html = f'<img class="poster-thumb" src="{r["poster"]}" alt="" loading="lazy">'
+        poster_src = r.get('poster') if r.get('poster') and r['poster'] != 'N/A' else ''
+        if poster_src:
+            poster_html = f'<img class="poster-thumb" src="{poster_src}" alt="" loading="lazy">'
         else:
             poster_html = '<div class="poster-thumb" style="display:flex;align-items:center;justify-content:center;font-size:18px;">🎬</div>'
 
@@ -818,8 +917,14 @@ def generate_html_report(results, folder_path, output_path):
         if r.get('imdb_id'):
             imdb_link = f'<a class="imdb-link" href="https://www.imdb.com/title/{r["imdb_id"]}/" target="_blank">IMDb ↗</a>'
 
-        html += f"""                    <tr data-type="{type_class}" data-rating="{rating_val}" data-title="{r['title']}" data-year="{r.get('year', '')}" data-search="{r['title'].lower()} {r.get('genre','').lower()} {r.get('director','').lower()} {r.get('actors','').lower()}">
-                        <td style="color:var(--text-muted);font-size:12px;">{idx}</td>
+        file_uri = "file:///" + r.get("filepath", "").replace("\\", "/")
+        play_btn = f'<button class="play-btn" onclick="openModal(\'{file_uri}\')" title="Play in Browser">▶</button>'
+        
+        # Build searching dataset
+        search_data = f"{r['title'].lower()} {r.get('genre','').lower()} {r.get('director','').lower()} {r.get('actors','').lower()}"
+
+        table_rows_html += f"""                    <tr data-type="{type_class}" data-rating="{rating_val}" data-title="{r['title']}" data-year="{r.get('year', '')}" data-search="{search_data}">
+                        <td class="idx-col" style="color:var(--text-muted);font-size:12px;">{idx}</td>
                         <td>
                             <div class="title-cell">
                                 {poster_html}
@@ -835,13 +940,33 @@ def generate_html_report(results, folder_path, output_path):
                         <td><div class="genre-tags">{genres_html}</div></td>
                         <td style="font-size:13px;">{r.get('director', 'N/A')}</td>
                         <td><span class="file-name" title="{r.get('original_filename', '')}">{r.get('original_filename', '')}</span></td>
+                        <td>{play_btn}</td>
                         <td>{imdb_link}</td>
                     </tr>
 """
+        card_poster_ui = f'<img class="card-poster" src="{poster_src}" alt="" loading="lazy">' if poster_src else '<div class="card-poster" style="display:flex;align-items:center;justify-content:center;font-size:48px;">🎬</div>'
+        cards_html += f"""            <div class="card-item" data-type="{type_class}" data-rating="{rating_val}" data-title="{r['title']}" data-year="{r.get('year', '')}" data-search="{search_data}">
+                {card_poster_ui}
+                <div class="card-content">
+                    <div class="card-title" title="{r['title']}">{r['title']}</div>
+                    <div class="card-meta">{r.get('year', 'N/A')} • {r.get('runtime', 'N/A')}</div>
+                    <div style="margin-bottom:8px;"><span class="rating-badge {rating_class}">⭐ {r.get('imdb_rating', 'N/A')}</span></div>
+                    <div class="card-actions">
+                        {play_btn}
+                        {imdb_link}
+                    </div>
+                </div>
+            </div>\n"""
 
+    html += table_rows_html
     html += """                </tbody>
             </table>
         </div>
+        
+        <div id="cardsGrid">
+"""
+    html += cards_html
+    html += """        </div>
 """
 
     # Not found section
@@ -888,13 +1013,39 @@ def generate_html_report(results, folder_path, output_path):
             Generated on {datetime.now().strftime('%B %d, %Y at %I:%M %p')} — IMDb Report Generator
         </div>
     </div>
+    
+    <!-- Video Modal -->
+    <div id="videoModal">
+        <div id="videoContainer">
+            <span class="close-modal" onclick="closeModal()">&times;</span>
+            <video id="mooviePlayer"></video>
+        </div>
+    </div>
 
+    <script src="moovie.js/js/moovie.js"></script>
     <script>
         let currentFilter = 'all';
+        let currentView = 'table';
+        let moovieInstance = null;
+
+        function toggleView(view) {{
+            currentView = view;
+            if (view === 'card') {{
+                document.querySelector('.table-wrapper').style.display = 'none';
+                document.getElementById('cardsGrid').style.display = 'grid';
+                document.getElementById('btnTableView').classList.remove('active');
+                document.getElementById('btnCardView').classList.add('active');
+            }} else {{
+                document.querySelector('.table-wrapper').style.display = 'block';
+                document.getElementById('cardsGrid').style.display = 'none';
+                document.getElementById('btnTableView').classList.add('active');
+                document.getElementById('btnCardView').classList.remove('active');
+            }}
+        }}
 
         function setFilter(type, btn) {{
             currentFilter = type;
-            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.controls > .filter-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             filterTable();
         }}
@@ -902,19 +1053,25 @@ def generate_html_report(results, folder_path, output_path):
         function filterTable() {{
             const search = document.getElementById('searchInput').value.toLowerCase();
             const rows = document.querySelectorAll('#resultsTable tbody tr');
+            const cards = document.querySelectorAll('#cardsGrid .card-item');
             let visible = 0;
             
-            rows.forEach(row => {{
+            for (let i = 0; i < rows.length; i++) {{
+                const row = rows[i];
+                const card = cards[i];
+                
                 const matchType = currentFilter === 'all' || row.dataset.type === currentFilter;
                 const matchSearch = !search || row.dataset.search.includes(search);
                 
                 if (matchType && matchSearch) {{
                     row.style.display = '';
+                    if (card) card.style.display = 'flex';
                     visible++;
                 }} else {{
                     row.style.display = 'none';
+                    if (card) card.style.display = 'none';
                 }}
-            }});
+            }}
             
             document.getElementById('resultCount').textContent = visible + ' titles';
         }}
@@ -922,23 +1079,64 @@ def generate_html_report(results, folder_path, output_path):
         function sortTable() {{
             const sortVal = document.getElementById('sortSelect').value;
             const tbody = document.querySelector('#resultsTable tbody');
+            const grid = document.getElementById('cardsGrid');
             const rows = Array.from(tbody.querySelectorAll('tr'));
+            const cards = Array.from(grid.querySelectorAll('.card-item'));
             
-            rows.sort((a, b) => {{
+            const pairs = rows.map((row, i) => ({{ row, card: cards[i] }}));
+            
+            pairs.sort((a, b) => {{
                 switch (sortVal) {{
-                    case 'rating-desc': return (parseFloat(b.dataset.rating) || 0) - (parseFloat(a.dataset.rating) || 0);
-                    case 'rating-asc': return (parseFloat(a.dataset.rating) || 0) - (parseFloat(b.dataset.rating) || 0);
-                    case 'title-asc': return a.dataset.title.localeCompare(b.dataset.title);
-                    case 'title-desc': return b.dataset.title.localeCompare(a.dataset.title);
-                    case 'year-desc': return (b.dataset.year || '').localeCompare(a.dataset.year || '');
-                    case 'year-asc': return (a.dataset.year || '').localeCompare(b.dataset.year || '');
+                    case 'rating-desc': return (parseFloat(b.row.dataset.rating) || 0) - (parseFloat(a.row.dataset.rating) || 0);
+                    case 'rating-asc': return (parseFloat(a.row.dataset.rating) || 0) - (parseFloat(b.row.dataset.rating) || 0);
+                    case 'title-asc': return a.row.dataset.title.localeCompare(b.row.dataset.title);
+                    case 'title-desc': return b.row.dataset.title.localeCompare(a.row.dataset.title);
+                    case 'year-desc': return (b.row.dataset.year || '').localeCompare(a.row.dataset.year || '');
+                    case 'year-asc': return (a.row.dataset.year || '').localeCompare(b.row.dataset.year || '');
                 }}
             }});
             
-            rows.forEach((row, i) => {{
-                row.querySelector('td').textContent = i + 1;
-                tbody.appendChild(row);
+            pairs.forEach((pair, i) => {{
+                if (pair.row.querySelector('.idx-col')) {{
+                    pair.row.querySelector('.idx-col').textContent = i + 1;
+                }} else {{
+                    pair.row.querySelector('td').textContent = i + 1;
+                }}
+                tbody.appendChild(pair.row);
+                if (pair.card) grid.appendChild(pair.card);
             }});
+        }}
+        
+        function openModal(videoSrc, posterSrc = '') {{
+            document.getElementById('videoModal').style.display = 'flex';
+            const player = document.getElementById('mooviePlayer');
+            
+            if (!moovieInstance) {{
+                player.src = videoSrc;
+                moovieInstance = new Moovie({{
+                    selector: "#mooviePlayer",
+                    dimensions: {{ width: "100%" }},
+                    icons: {{ path: "moovie.js/icons/" }}
+                }});
+            }} else {{
+                moovieInstance.change({{
+                    video: {{
+                        videoSrc: videoSrc,
+                        posterSrc: posterSrc
+                    }}
+                }});
+            }}
+        }}
+        
+        function closeModal() {{
+            document.getElementById('videoModal').style.display = 'none';
+            if (moovieInstance && moovieInstance.video) {{
+                moovieInstance.video.pause();
+                moovieInstance.change({{ video: {{ videoSrc: '' }} }});
+            }} else {{
+                const player = document.getElementById('mooviePlayer');
+                if(player) {{ player.pause(); player.src = ''; }}
+            }}
         }}
     </script>
 </body>
